@@ -1,0 +1,42 @@
+.learning-resume-panel {
+  display: grid;
+  gap: .45rem;
+  margin: 0 0 1.25rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--md-primary-fg-color);
+  border-radius: .35rem;
+  background: color-mix(in srgb, var(--md-primary-fg-color) 8%, var(--md-default-bg-color));
+}
+
+.learning-resume-panel strong {
+  color: var(--md-primary-fg-color);
+  font-size: 1.05rem;
+}
+
+.learning-resume-title {
+  font-weight: 600;
+}
+
+.learning-resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.learning-resume-actions button {
+  cursor: pointer;
+  padding: .35rem .65rem;
+  border: 1px solid var(--md-primary-fg-color);
+  border-radius: .25rem;
+  color: var(--md-primary-fg-color);
+  background: transparent;
+}
+
+.learning-resume-actions button:first-child {
+  color: var(--md-primary-bg-color);
+  background: var(--md-primary-fg-color);
+}
+
+.learning-resume-panel small {
+  color: var(--md-default-fg-color--light);
+}

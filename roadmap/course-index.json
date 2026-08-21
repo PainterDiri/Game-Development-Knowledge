@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "language": "zh-CN",
+  "purpose": "以计算机科学培养方案为基础的游戏开发知识集生成顺序",
+  "courses": [
+    {"order": 0, "slug": "toolchain-and-git", "title": "游戏开发工具链与可复现工程", "source": "增补", "depth": "D2", "phase": 0, "practice": "P0", "status": "scaffolded"},
+    {"order": 1, "slug": "c-programming", "title": "C程序设计基础及实验（游戏底层版）", "source": "培养方案", "depth": "D3", "phase": 1, "practice": "P0", "status": "scaffolded"},
+    {"order": 2, "slug": "discrete-mathematics", "title": "离散数学及其应用（游戏问题版）", "source": "培养方案", "depth": "D3", "phase": 1, "practice": "P1", "status": "scaffolded"},
+    {"order": 3, "slug": "linear-algebra-for-games", "title": "线性代数（游戏数学版）", "source": "培养方案", "depth": "D3", "phase": 1, "practice": "P1/P2", "status": "scaffolded"},
+    {"order": 4, "slug": "calculus-and-probability", "title": "微积分与概率统计（运动、动画、随机性版）", "source": "培养方案", "depth": "D2", "phase": 1, "practice": "P1/P3", "status": "scaffolded"},
+    {"order": 5, "slug": "data-structures", "title": "数据结构基础（运行时版）", "source": "培养方案", "depth": "D3", "phase": 2, "practice": "P0/P1", "status": "scaffolded"},
+    {"order": 6, "slug": "advanced-data-structures-algorithms", "title": "高级数据结构与算法分析", "source": "培养方案", "depth": "D3", "phase": 2, "practice": "P1", "status": "scaffolded"},
+    {"order": 7, "slug": "object-oriented-programming", "title": "面向对象程序设计（C++/C#游戏工程版）", "source": "培养方案", "depth": "D3", "phase": 2, "practice": "P0/P2", "status": "scaffolded"},
+    {"order": 8, "slug": "computer-organization", "title": "计算机组成与体系结构（帧预算版）", "source": "培养方案", "depth": "D2", "phase": 3, "practice": "P0/P2", "status": "scaffolded"},
+    {"order": 9, "slug": "operating-systems", "title": "操作系统（游戏运行时版）", "source": "培养方案", "depth": "D3", "phase": 3, "practice": "P0/P2", "status": "scaffolded"},
+    {"order": 10, "slug": "software-engineering", "title": "软件工程（游戏团队交付版）", "source": "培养方案", "depth": "D3", "phase": 3, "practice": "P3/P5", "status": "scaffolded"},
+    {"order": 11, "slug": "database-systems", "title": "数据库系统（存档、内容与服务版）", "source": "培养方案", "depth": "D2", "phase": 4, "practice": "P3/P5", "status": "scaffolded"},
+    {"order": 12, "slug": "computer-networks", "title": "计算机网络（多人游戏版）", "source": "培养方案", "depth": "D3", "phase": 4, "practice": "network-lab/P5", "status": "scaffolded"},
+    {"order": 13, "slug": "computer-graphics", "title": "计算机图形学与渲染基础", "source": "增补", "depth": "D3", "phase": 5, "practice": "P2/P3", "status": "scaffolded"},
+    {"order": 14, "slug": "multimedia-and-asset-pipeline", "title": "多媒体技术与资源管线", "source": "培养方案", "depth": "D2", "phase": 5, "practice": "P3/P5", "status": "scaffolded"},
+    {"order": 15, "slug": "compiler-principles-and-dsl", "title": "编译原理与游戏配置 DSL", "source": "培养方案", "depth": "D2", "phase": 6, "practice": "dsl-lab/P3", "status": "scaffolded"},
+    {"order": 16, "slug": "programming-language-principles", "title": "编程语言原理与脚本架构", "source": "计算机科学类选修", "depth": "D2", "phase": 6, "practice": "dsl-lab/P3", "status": "scaffolded"},
+    {"order": 17, "slug": "game-ai", "title": "游戏 AI（状态机、寻路、行为与生成）", "source": "增补/AI类课程", "depth": "D2", "phase": 6, "practice": "P1/P3", "status": "scaffolded"},
+    {"order": 18, "slug": "game-engine-architecture", "title": "游戏引擎架构与运行时", "source": "增补", "depth": "D3", "phase": 6, "practice": "P2/P4", "status": "scaffolded"},
+    {"order": 19, "slug": "unity-roguelite-production", "title": "Unity 肉鸽动作游戏生产", "source": "增补", "depth": "D3", "phase": 7, "practice": "P3", "status": "scaffolded"},
+    {"order": 20, "slug": "unreal-gameplay-programming", "title": "Unreal Engine Gameplay Programming", "source": "增补", "depth": "D2→D3", "phase": 8, "practice": "P4", "status": "scaffolded"},
+    {"order": 21, "slug": "game-networking-and-services", "title": "游戏网络、服务端与在线服务", "source": "增补/网络拓展", "depth": "D2→D3", "phase": 8, "practice": "network-lab/P5", "status": "scaffolded"},
+    {"order": 22, "slug": "optimization-debugging-and-tools", "title": "性能优化、调试与游戏工具开发", "source": "增补/软件工程拓展", "depth": "D3", "phase": 8, "practice": "P3/P5", "status": "scaffolded"},
+    {"order": 23, "slug": "shipping-and-capstone", "title": "发行工程与小以撒毕业项目", "source": "工程实践/毕业设计增补", "depth": "D3", "phase": 9, "practice": "P5", "status": "scaffolded"}
+  ]
+}

@@ -1,0 +1,79 @@
+site_name: 游戏开发究极知识包
+site_url: https://painterdiri.github.io/Game-Development-Knowledge/
+site_description: 以计算机科学培养方案为基础、面向 Unity/Unreal Engine 与肉鸽游戏开发的系统知识库
+repo_name: PainterDiri/Game-Development-Knowledge
+repo_url: https://github.com/PainterDiri/Game-Development-Knowledge
+edit_uri: edit/main/
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: 切换到浅色模式
+  font: false
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+extra_javascript:
+  - javascripts/learning-progress.js
+
+extra_css:
+  - stylesheets/learning-progress.css
+
+not_in_nav: |
+  /courses/**
+  /roadmap/README.md
+
+nav:
+  - 首页: index.md
+  - 学习与操作: learning-workflow.md
+  - 自动续学与独立使用: automatic-progress.md
+  - 网站发布: publishing.md
+  - 路线:
+      - 总览: roadmap.md
+      - 培养方案映射: roadmap/curriculum-mapping.md
+      - 实践体系: roadmap/practice-system.md
+      - 单周闭环: roadmap/weekly-loop.md
+      - 当前技术与前沿拓展: roadmap/modern-expansions.md
+      - 课程索引: roadmap/course-index.md
+  - 生成标准:
+      - 标准中心: standards/README.md
+      - 知识集规范: standards/knowledge-generation-spec.md
+      - 执行流程: standards/generation-workflow.md
+      - 目录契约: standards/course-folder-template.md
+      - 研究与引用: standards/research-and-citation.md
+      - 实践设计: standards/practice-design.md
+      - 命名与架构: standards/naming-and-architecture.md
+      - 质量门禁: standards/quality-gates.md
+      - AI提示模板: standards/ai-course-prompt.md
+  - 课程知识集:
+      - 课程总表: course-index.md
