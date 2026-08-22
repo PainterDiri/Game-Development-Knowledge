@@ -20,12 +20,9 @@ REQUIRED = [
     "standards/naming-and-architecture.md", "standards/quality-gates.md",
     "standards/ai-course-prompt.md", "knowledge-sets/README.md",
 ]
-SCAFFOLD_FILES = ["README.md", "lessons/00-course-map.md", "references/research-notes.md"]
-COMPLETED_FILES = [
-    *SCAFFOLD_FILES,
-    "labs/README.md", "labs/solutions.md",
-    "references/bibliography.md",
-]
+# Legacy map/research files remain accepted for existing scaffolds. New courses may
+# use README.md as the combined course landing page and course map.
+SCAFFOLD_FILES = ["README.md", "references/research-notes.md"]
 FORBIDDEN_PUBLIC_STATE = {
     "progress.md", "exercise-log.md", "mistakes.md", "decision-log.md", "workspace"
 }
@@ -38,10 +35,95 @@ SECRET_RES = [
 QUESTION_ID_RE = re.compile(r"^###\s+((?:[A-Z][A-Z0-9-]*-)?Q\d+|综合题)\s*[：:]", re.MULTILINE)
 COMPLETION_MARKERS = ("待课程生成时填写", "待研究后填写", "待设计", "待定义")
 VALID_STATUSES = {"planned", "scaffolded", "in-progress", "completed"}
+QUALITY_SIGNALS = {
+    "mechanism": ("机制", "不变量", "定义与边界"),
+    "example": ("示例", "```", "命令"),
+    "verification": ("验证", "验收", "预期结果"),
+    "failure": ("失败", "边界", "常见错误"),
+    "mapping": ("Unity", "Unreal", "游戏映射"),
+}
 
 
 def is_public_path(path: Path) -> bool:
     return not any(part in SKIP_PARTS for part in path.parts)
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def check_course_structure(errors: list[str], slug: str, status: str, base: Path) -> None:
+    for rel in SCAFFOLD_FILES:
+        if not (base / rel).exists():
+            errors.append(f"{slug}: missing {rel} for status {status}")
+
+    assessment_path = base / "assessments.md"
+    questions_path = base / "assessments/questions.md"
+    answers_path = base / "assessments/answers.md"
+    practice_path = base / "practice.md"
+    old_lab_questions = base / "labs/README.md"
+    old_lab_solutions = base / "labs/solutions.md"
+
+    if assessment_path.exists() and (questions_path.exists() or answers_path.exists()):
+        errors.append(f"{slug}: use either assessments.md or assessments/questions.md + answers.md, not both")
+    if questions_path.exists() != answers_path.exists():
+        errors.append(f"{slug}: questions.md and answers.md must be created together")
+
+    question_ids: set[str] = set()
+    if assessment_path.exists():
+        assessment_text = read_text(assessment_path)
+        question_ids = set(QUESTION_ID_RE.findall(assessment_text))
+        if status == "completed" and question_ids and "<details>" not in assessment_text:
+            errors.append(f"{slug}: completed assessments.md must use <details> blocks")
+    elif questions_path.exists() and answers_path.exists():
+        question_ids = set(QUESTION_ID_RE.findall(read_text(questions_path)))
+        answer_text = read_text(answers_path)
+        missing_answers = sorted(qid for qid in question_ids if qid not in answer_text)
+        if missing_answers:
+            errors.append(f"{slug}: answer file missing IDs: {', '.join(missing_answers)}")
+        if status == "completed" and "<details>" not in answer_text:
+            errors.append(f"{slug}: completed answers.md must use <details> blocks")
+    elif status == "completed":
+        errors.append(f"{slug}: completed course needs assessments.md or split questions/answers")
+
+    if practice_path.exists():
+        practice_text = read_text(practice_path)
+        for marker in ("验收", "常见失败", "最小版本"):
+            if marker not in practice_text:
+                errors.append(f"{slug}: practice.md missing required self-study section: {marker}")
+    elif old_lab_questions.exists() or old_lab_solutions.exists():
+        if old_lab_questions.exists() != old_lab_solutions.exists():
+            errors.append(f"{slug}: legacy labs/README.md and labs/solutions.md must be created together")
+        elif status == "completed" and "<details>" not in read_text(old_lab_solutions):
+            errors.append(f"{slug}: completed labs/solutions.md must use <details> blocks")
+    elif status == "completed":
+        errors.append(f"{slug}: completed course needs practice.md or legacy labs/README.md + labs/solutions.md")
+
+    lessons_dir = base / "lessons"
+    lesson_files = [p for p in lessons_dir.glob("*.md") if p.name != "00-course-map.md"] if lessons_dir.exists() else []
+    if status == "completed":
+        if not lesson_files:
+            errors.append(f"{slug}: completed course has no lesson beyond the legacy course map")
+        else:
+            lesson_text = "\n".join(read_text(path) for path in lesson_files)
+            missing_signals = [
+                name for name, alternatives in QUALITY_SIGNALS.items()
+                if not any(token in lesson_text for token in alternatives)
+            ]
+            if len(missing_signals) > 1:
+                errors.append(f"{slug}: lesson body lacks quality signals: {', '.join(missing_signals)}")
+            if sum(len(read_text(path).split()) for path in lesson_files) < 1200:
+                errors.append(f"{slug}: completed lesson body is too short for a complete course")
+
+    if status == "completed" and not question_ids:
+        errors.append(f"{slug}: completed course must contain at least one question ID")
+
+    # Any old scaffold markers are forbidden in completed public files.
+    if status == "completed":
+        for path in base.rglob("*.md"):
+            markers = [m for m in COMPLETION_MARKERS if m in read_text(path)]
+            if markers:
+                errors.append(f"{slug}: completed file contains scaffold markers in {path.relative_to(base)}: {', '.join(markers)}")
 
 
 def main() -> int:
@@ -51,7 +133,7 @@ def main() -> int:
             errors.append(f"missing required file: {rel}")
 
     try:
-        index = json.loads((ROOT / "roadmap/course-index.json").read_text(encoding="utf-8"))
+        index = json.loads(read_text(ROOT / "roadmap/course-index.json"))
     except Exception as exc:
         errors.append(f"cannot read course-index.json: {exc}")
         index = {"courses": []}
@@ -74,50 +156,13 @@ def main() -> int:
                 errors.append(f"{slug}: missing metadata field {key}")
 
         base = ROOT / "knowledge-sets" / slug
-        required_files = COMPLETED_FILES if status == "completed" else SCAFFOLD_FILES
-        for rel in required_files:
-            if not (base / rel).exists():
-                errors.append(f"{slug}: missing {rel} for status {status}")
-        for path in base.rglob("*") if base.exists() else []:
+        if not base.exists():
+            errors.append(f"{slug}: missing course directory")
+            continue
+        check_course_structure(errors, slug, status, base)
+        for path in base.rglob("*"):
             if path.is_file() and path.name in FORBIDDEN_PUBLIC_STATE:
                 errors.append(f"{slug}: learner state must not be public: {path.relative_to(base)}")
-
-        assessment_path = base / "assessments.md"
-        questions_path = base / "assessments/questions.md"
-        answers_path = base / "assessments/answers.md"
-        solutions_path = base / "labs/solutions.md"
-        if assessment_path.exists() and (questions_path.exists() or answers_path.exists()):
-            errors.append(f"{slug}: use either assessments.md or assessments/questions.md + answers.md, not both")
-        if questions_path.exists() != answers_path.exists():
-            errors.append(f"{slug}: questions.md and answers.md must be created together")
-        if assessment_path.exists():
-            assessment_text = assessment_path.read_text(encoding="utf-8")
-            question_ids = set(QUESTION_ID_RE.findall(assessment_text))
-            if status == "completed" and question_ids and "<details>" not in assessment_text:
-                errors.append(f"{slug}: completed assessments.md must use <details> blocks")
-        elif questions_path.exists() and answers_path.exists():
-            question_ids = set(QUESTION_ID_RE.findall(questions_path.read_text(encoding="utf-8")))
-            answer_text = answers_path.read_text(encoding="utf-8")
-            missing_answers = sorted(qid for qid in question_ids if qid not in answer_text)
-            if missing_answers:
-                errors.append(f"{slug}: answer file missing IDs: {', '.join(missing_answers)}")
-            if status == "completed" and "<details>" not in answer_text:
-                errors.append(f"{slug}: completed answers.md must use <details> blocks")
-        elif status == "completed":
-            errors.append(f"{slug}: completed course needs assessments.md or split questions/answers")
-        if status == "completed" and solutions_path.exists() and "<details>" not in solutions_path.read_text(encoding="utf-8"):
-            errors.append(f"{slug}: completed labs/solutions.md must use <details> blocks")
-
-        if status == "completed":
-            lesson_files = [p for p in (base / "lessons").glob("*.md") if p.name != "00-course-map.md"]
-            if not lesson_files:
-                errors.append(f"{slug}: completed course has no lesson beyond the course map")
-            for rel in COMPLETED_FILES + [str(p.relative_to(base)) for p in lesson_files]:
-                path = base / rel
-                if path.exists():
-                    markers = [m for m in COMPLETION_MARKERS if m in path.read_text(encoding="utf-8")]
-                    if markers:
-                        errors.append(f"{slug}: completed file contains scaffold markers in {rel}: {', '.join(markers)}")
 
     if orders != sorted(orders):
         errors.append("course orders are not monotonic")
@@ -126,7 +171,7 @@ def main() -> int:
     for md in ROOT.rglob("*.md"):
         if not is_public_path(md):
             continue
-        text = md.read_text(encoding="utf-8")
+        text = read_text(md)
         if PRIVATE_PATH_RE.search(text):
             errors.append(f"{md.relative_to(ROOT)}: contains a private absolute path")
         for secret_re in SECRET_RES:
@@ -140,7 +185,7 @@ def main() -> int:
                 errors.append(f"{md.relative_to(ROOT)}: broken link -> {target}")
 
     if (ROOT / "mkdocs.yml").exists():
-        config = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+        config = read_text(ROOT / "mkdocs.yml")
         for asset in (
             "javascripts/learning-progress.js", "javascripts/learning-ui.js",
             "stylesheets/learning-progress.css", "stylesheets/site.css",
@@ -156,7 +201,7 @@ def main() -> int:
         return 1
 
     status_summary = ", ".join(f"{key}={value}" for key, value in sorted(statuses.items()))
-    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); links, privacy, UI assets and state rules valid")
+    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); structure, depth signals, links, privacy, UI assets and state rules valid")
     return 0
 
 

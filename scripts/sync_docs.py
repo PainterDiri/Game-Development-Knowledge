@@ -54,7 +54,7 @@ def is_public_source(path: Path, source: Path) -> bool:
     rel = path.relative_to(source)
     if any(part.startswith(".") or part in {"Library", "Temp", "Build", "Binaries", "Intermediate", "Saved"} for part in rel.parts):
         return False
-    return path.name in {"CMakeLists.txt", "LICENSE", "LICENSE.md"} or path.suffix.lower() in PUBLIC_SUFFIXES
+    return path.name in {"CMakeLists.txt", "Makefile", "LICENSE", "LICENSE.md"} or path.suffix.lower() in PUBLIC_SUFFIXES
 
 
 def copy_public_tree(source: Path, destination: Path) -> None:

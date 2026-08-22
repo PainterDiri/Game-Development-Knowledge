@@ -58,8 +58,7 @@ def main() -> int:
     if base.exists() and any(base.rglob("*")):
         raise SystemExit(f"{base.relative_to(ROOT)} already exists; refusing to overwrite it")
 
-    for directory in ("lessons", "references"):
-        (base / directory).mkdir(parents=True, exist_ok=True)
+    (base / "references").mkdir(parents=True, exist_ok=True)
     write_new(base / "README.md", f"""# {title}
 
 - 课程 ID：`{slug}`
@@ -74,13 +73,9 @@ def main() -> int:
 
 {course['outcome']}
 
-下一步先研究来源并完成[课程地图](lessons/00-course-map.md)，再按课程难点创建实际需要的章节、题目和实践文件。
+下一步先研究来源，并把 README.md 重写为“课程首页 + 课程地图”；再按课程难点创建实际需要的正文、实践和练习文件。
 """)
-    write_new(base / "lessons/00-course-map.md", f"""# {title} · 课程地图
-
-课程地图尚未设计。研究时先确定本课程适合推导、实现、测量、诊断、架构比较还是引擎观察，避免套用统一章节结构。
-""")
-    write_new(base / "references/research-notes.md", "# 研究笔记\n\n按问题记录来源、版本、关键事实、用途、限制和冲突。\n")
+    write_new(base / "references/research-notes.md", "# 研究笔记\n\n按问题记录来源、版本、访问日期、关键事实、用途、限制和冲突。\n")
     if not existing:
         data["courses"].append(course)
         index_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
