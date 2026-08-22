@@ -33,6 +33,26 @@ Unity RogueSlice（消费契约，不共享 Python 内部状态）
 - [`tests/test_game.py`](code/repro-game/tests/test_game.py)：确定性、性质和边界测试；
 - [`Makefile`](code/repro-game/Makefile)：统一入口。
 
+## 里程碑 0：先用 Git 管住一次小改动
+
+### 任务
+
+1. 从最新主线创建 `practice/toolchain-seeded-room` 分支；
+2. 运行现有测试，确认基线通过；
+3. 只修改 README 或一条测试说明，使用 `git status`、`git diff`、`git add -p` 和 `git diff --cached` 观察三个状态；
+4. 创建一个单一目的提交，并用 `git show --stat HEAD` 检查；
+5. 在临时分支练习一次 `revert`，确认历史增加而不是删除。
+
+### 验收
+
+```bash
+git status
+git log --oneline --decorate --graph -5
+git show --stat HEAD
+```
+
+预期：你能指出当前分支、工作区是否干净、最后提交包含什么，以及 revert 与删除历史的区别。
+
 ## 里程碑 A：确定性与性质
 
 ### 任务
@@ -126,7 +146,7 @@ git bisect reset
 
 ## 时间不足的最小版本
 
-只完成 A+B 也可以形成有效的最小交付：测试通过、两次冷构建一致、manifest 可读、产物可启动、产物目录被忽略。不要删除验收项后宣称“已可复现”。C 是把构建工程连接到真实调试工作的关键延伸。
+只完成 0+A+B 也可以形成有效的最小交付：测试通过、两次冷构建一致、manifest 可读、产物可启动、产物目录被忽略。不要删除验收项后宣称“已可复现”。C 是把构建工程连接到真实调试工作的关键延伸。
 
 ## 常见失败与诊断速查
 

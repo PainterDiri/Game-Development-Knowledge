@@ -87,6 +87,12 @@ def course_landing(course: dict) -> str:
 
 {course['summary']}
 
+## 学习入口与依赖
+
+- **前置课程**：{', '.join(f'`{item}`' for item in course.get('prerequisites', [])) or '无硬性前置；仍应按课程顺序完成补桥诊断'}
+- **教学弧**：{course.get('teachingArc') or '生成正文前必须先补齐概念依赖图'}
+- **预计正文规模**：{course.get('expectedLessonScale') or '生成正文前必须先确定'}
+
 ## 实践接缝
 
 - **轨道**：`{course['practiceTrack']}`

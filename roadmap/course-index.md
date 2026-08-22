@@ -21,10 +21,13 @@
 | 14 | 多媒体技术与资源管线 | D2 | 5 | P3/P5 | `shared-unity` | `export` | F6 资源管线 | `scaffolded` |
 | 15 | 编译原理与游戏配置 DSL | D2 | 6 | dsl-lab/P3 | `shared-unity` | `export` | F4 内容 DSL | `scaffolded` |
 | 16 | 编程语言原理与脚本架构 | D2 | 6 | dsl-lab/P3 | `shared-unity` | `adapter` | F4 玩法脚本边界 | `scaffolded` |
-| 17 | 游戏 AI（状态机、寻路、行为与生成） | D2 | 6 | P1/P3 | `shared-unity` | `direct` | F4 敌人与生成 | `scaffolded` |
-| 18 | 游戏引擎架构与运行时 | D3 | 6 | P2/P4 | `shared-unity` | `direct` | F5 运行时接缝 | `scaffolded` |
-| 19 | Unity 肉鸽动作游戏生产 | D3 | 7 | P3 | `shared-unity` | `direct` | F5 Unity 核心纵切片 | `scaffolded` |
-| 20 | Unreal Engine Gameplay Programming | D2→D3 | 8 | P4 | `ue-migration` | `standalone` | F9 UE 系统重建 | `scaffolded` |
-| 21 | 游戏网络、服务端与在线服务 | D2→D3 | 8 | network-lab/P5 | `online-sidecar` | `adapter` | F8 在线服务旁路 | `scaffolded` |
-| 22 | 性能优化、调试与游戏工具开发 | D3 | 8 | P3/P5 | `shared-unity` | `adapter` | F7 性能与诊断 | `scaffolded` |
-| 23 | 发行工程与小以撒毕业项目 | D3 | 9 | P5 | `shipping` | `direct` | F10 发行候选版 | `scaffolded` |
+| 17 | 机器学习与神经网络基础（游戏数据版） | D3 | 6 | P1/P3 | `supporting-lab` | `export` | F6 AI 数据与模型基础 | `scaffolded` |
+| 18 | LLM 与 Transformer 原理及应用 | D3 | 6 | P1/P3 | `supporting-lab` | `adapter` | F6 生成式 AI 旁路 | `scaffolded` |
+| 19 | 生成式 AI 与游戏工具工程 | D3 | 6 | P3/P5 | `shared-unity` | `adapter` | F6 AI 工具与内容管线 | `scaffolded` |
+| 20 | 游戏 AI（状态机、寻路、行为与生成） | D3 | 6 | P1/P3 | `shared-unity` | `direct` | F4 敌人与生成 | `scaffolded` |
+| 21 | 游戏引擎架构与运行时 | D3 | 6 | P2/P4 | `shared-unity` | `direct` | F5 运行时接缝 | `scaffolded` |
+| 22 | Unity 肉鸽动作游戏生产 | D3 | 7 | P3 | `shared-unity` | `direct` | F5 Unity 核心纵切片 | `scaffolded` |
+| 23 | Unreal Engine Gameplay Programming | D2→D3 | 8 | P4 | `ue-migration` | `standalone` | F9 UE 系统重建 | `scaffolded` |
+| 24 | 游戏网络、服务端与在线服务 | D2→D3 | 8 | network-lab/P5 | `online-sidecar` | `adapter` | F8 在线服务旁路 | `scaffolded` |
+| 25 | 性能优化、调试与游戏工具开发 | D3 | 8 | P3/P5 | `shared-unity` | `adapter` | F7 性能与诊断 | `scaffolded` |
+| 26 | 发行工程与小以撒毕业项目 | D3 | 9 | P5 | `shipping` | `direct` | F10 发行候选版 | `scaffolded` |

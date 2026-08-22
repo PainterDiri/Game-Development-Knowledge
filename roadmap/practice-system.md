@@ -30,7 +30,7 @@ flowchart LR
 | 轨道 | 适合课程 | 默认结果 | 是否直接修改 Unity 主项目 |
 |---|---|---|---|
 | `supporting-lab` 支撑实验 | C、数学、算法、组成、OS、图形 | 小程序、库、fixture、基准或推导验证 | 否；通过导出/适配器消费 |
-| `shared-unity` 共享 Unity | 软件工程、数据库、DSL、AI、引擎、Unity 生产、优化 | 一个小功能或工具接缝 | 是，但只改明确目录 |
+| `shared-unity` 共享 Unity | 软件工程、数据库、DSL、机器学习、LLM、生成式 AI、游戏 AI、引擎、Unity 生产、优化 | 一个小功能或工具接缝 | 是，但只改明确目录 |
 | `online-sidecar` 联机旁路 | 网络、在线服务 | 本地服务、协议模拟、故障测试 harness | 可选，不阻塞单机主线 |
 | `ue-migration` UE 对照 | UE 玩法编程 | 独立 UE 小项目中的系统重建 | 否；保持引擎边界 |
 | `shipping` 发行候选 | 发行与毕业 | 主 Unity 项目候选版、安装包和发布证据 | 是，最后冻结 |

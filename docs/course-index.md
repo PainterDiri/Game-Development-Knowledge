@@ -225,13 +225,43 @@ flowchart TB
 
     <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `adapter` · F4 玩法脚本边界</span>
 
+-   :material-book-open-page-variant-outline: **[机器学习基础](courses/machine-learning-foundations/README.md)**
+
+    <span class="course-badge">D3</span> <span class="course-badge">P1/P3</span> <span class="course-badge ">准备中</span>
+
+    从数据、表示、损失、梯度和评估建立机器学习心智模型，连接线性代数与游戏数据。
+
+    <span class="course-outcome"><strong>出口：</strong>实现一个有基线、训练/验证/测试切分、指标和失败分析的小型模型，并解释何时不该使用机器学习。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F6 AI 数据与模型基础</span>
+
+-   :material-book-open-page-variant-outline: **[LLM 与 Transformer](courses/llm-and-transformers/README.md)**
+
+    <span class="course-badge">D3</span> <span class="course-badge">P1/P3</span> <span class="course-badge ">准备中</span>
+
+    从 token 和 embedding 到注意力、Transformer、训练、推理、RAG 与工具调用，建立可验证的语言模型地图。
+
+    <span class="course-outcome"><strong>出口：</strong>实现一个简化的字符级语言模型/注意力实验，能用指标和资源预算评估 LLM 方案，而不是只会调用 API。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `adapter` · F6 生成式 AI 旁路</span>
+
+-   :material-book-open-page-variant-outline: **[生成式 AI 游戏工程](courses/generative-ai-for-games/README.md)**
+
+    <span class="course-badge">D3</span> <span class="course-badge">P3/P5</span> <span class="course-badge ">准备中</span>
+
+    把 LLM、图像/音频生成、检索、评估和人工审核放进可控的游戏内容与开发工具流程。
+
+    <span class="course-outcome"><strong>出口：</strong>交付一个带数据许可、提示版本、评估集、人工审核、缓存和失败回退的游戏开发 AI 工具原型。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `adapter` · F6 AI 工具与内容管线</span>
+
 -   :material-book-open-page-variant-outline: **[游戏 AI](courses/game-ai/README.md)**
 
-    <span class="course-badge">D2</span> <span class="course-badge">P1/P3</span> <span class="course-badge ">准备中</span>
+    <span class="course-badge">D3</span> <span class="course-badge">P1/P3</span> <span class="course-badge ">准备中</span>
 
-    把状态机、行为树、寻路、效用和程序化生成变成可调试的决策系统。
+    从规则式决策、寻路和行为树开始，再比较效用、学习策略与程序化生成，建立可解释、可复现、可调参的游戏 AI。
 
-    <span class="course-outcome"><strong>出口：</strong>实现一个能解释决策、复现行为并接受设计调参的敌人 AI。</span>
+    <span class="course-outcome"><strong>出口：</strong>实现一个能解释决策、复现行为、接受设计调参并与生成内容边界清晰的敌人 AI。</span>
 
     <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `direct` · F4 敌人与生成</span>
 

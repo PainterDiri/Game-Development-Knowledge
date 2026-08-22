@@ -147,3 +147,82 @@
 
 安全设计：默认 `contents: read`；测试/构建 job 使用缓存但只上传本次 artifact；受保护分支的独立 deploy job 才拥有 Pages/发布权限；秘密通过平台 secret 注入且不打印；第三方 action 固定并审查。验证 workflow 权限块，确认测试 job 无写权限仍能通过，下载 artifact 检查没有秘密且包含 build ID、提交、目标平台和报告。游戏映射：缓存加速导入，artifact 才是可回滚包。
 </details>
+
+### TOOLCHAIN-Q9：从工作区到提交，命令到底改变了什么
+
+你在个人分支上同时做了两个改动：`src/combat.py` 修复伤害计算，`README.md` 增加说明。请设计一组命令，只提交伤害修复，并逐条说明每个命令读取/改变哪个状态；最后证明提交没有包含 README 改动。
+
+<details>
+<summary>最小提示</summary>
+
+先用 `status` 和 `diff` 看现状，再用路径限定或 `add -p` 选择暂存内容，提交前检查 `diff --cached`，提交后检查 `show` 和 `status`。
+</details>
+
+<details>
+<summary>完整解析</summary>
+
+一种安全流程是：
+
+```bash
+git status --short
+git diff -- src/combat.py README.md
+git add src/combat.py
+git diff --cached
+git commit -m "Fix combat damage calculation"
+git show --stat --oneline HEAD
+git status --short
+```
+
+第一步读取工作区、暂存区和 `HEAD`，不修改文件；第二步比较工作区与暂存区，只观察两个路径；`git add src/combat.py` 只把该路径当前内容复制到暂存区，不上传远端，也不影响 README；`git diff --cached` 比较暂存区与 `HEAD`，是“下一次提交会包含什么”的直接证据；`commit` 根据暂存区创建新的本地提交节点，未暂存的 README 不会进入该节点；`show` 读取刚创建的提交；最后的 `status` 应显示 README 仍是未暂存修改，或者在没有其他变化时显示干净。
+
+如果 `src/combat.py` 内还混有不应提交的调试代码，应改用 `git add -p src/combat.py`，按块选择，而不是盲目 `git add .`。若误暂存 README，使用 `git restore --staged README.md`，它只改变暂存区并保留 README 工作区内容。验证不能只看提交信息，必须检查 `git show HEAD --name-only` 或 `git show --format= --name-only HEAD` 的文件列表。游戏映射是：把“规则修复”和“文档/调试变化”分开，便于 review、回滚和定位版本差异。
+</details>
+
+### TOOLCHAIN-Q10：分支、同步与 PR 合并策略
+
+`main` 已推进，而你的 `feature/dash` 分支落后且有 3 个本地提交。请给出一条安全的同步方案，并比较 `merge` 与 `rebase`；说明什么时候允许 `push --force-with-lease`，以及 PR 合并后为什么还要重新运行主线构建。
+
+<details>
+<summary>最小提示</summary>
+
+先用 `fetch` 更新远端信息，再在自己的分支整合 `origin/main`。区分“修改自己的未共享分支历史”和“修改别人可能已经基于的共享历史”。
+</details>
+
+<details>
+<summary>完整解析</summary>
+
+可采用以下流程：
+
+```bash
+git switch feature/dash
+git status
+git fetch origin
+git log --oneline --graph --decorate --all
+git rebase origin/main
+# 解决冲突后：git add <resolved-path> && git rebase --continue
+# 若发现方向错了：git rebase --abort
+git push --force-with-lease origin feature/dash
+```
+
+`fetch` 只更新本地的远端跟踪引用（如 `origin/main`），不改当前工作区；`rebase origin/main` 把本地 3 个提交在新基底上重放，因此会生成新的提交 ID；它适合个人尚未被他人基于的 feature 分支，且需要先确认工作区干净。`--force-with-lease` 是因为远端分支原本已有旧提交线，重写后普通 push 会被拒绝；它会在覆盖前检查远端仍是自己上次看到的状态，比 `--force` 多一道保护。若分支已被多人共享、作为发布分支或有人在其上继续开发，不应擅自 rebase/强推，应改用 `git merge origin/main`，普通 `git push`，或先与团队约定。
+
+无论选 merge 还是 rebase，都要重新运行测试和资产/构建门禁。PR 分支的绿色结果只证明当时那个提交和环境通过；主线在此期间可能加入输入映射、包版本或资源变化，真正交付的是主线整合后的 artifact。团队应在受保护的主线上重建，记录提交、工具版本、目标平台和 build ID，再由 QA 验证该 artifact，而不是把开发者本机产物直接当正式版本。游戏映射是冲刺、输入、动画和场景资源往往跨文件协作，分支历史整合与冷构建必须一起验证。
+</details>
+
+### TOOLCHAIN-Q11：从 PR 到发布候选与回滚
+
+一个“增加冲刺能力”的 PR 已通过单元测试，但主线集成后发现某平台输入映射缺失。请写出从发现到修复发布的处理顺序，明确程序、QA、构建/发行和负责人各自拥有的状态；并区分 `git revert`、重新发布旧 artifact 与数据库/存档回滚。
+
+<details>
+<summary>最小提示</summary>
+
+先保护正式版本和证据，再决定是代码回退、产物回退还是数据迁移修复；它们不是同一个按钮。
+</details>
+
+<details>
+<summary>完整解析</summary>
+
+先停止继续推广该候选版本，记录受影响的提交、build ID、平台、输入配置版本、日志和复现步骤。QA 将问题标记为发布阻断并确认最小复现；程序检查 PR 是否只覆盖逻辑而遗漏平台配置，补上输入映射和回归测试；构建/发行人员从固定提交重新生成候选 artifact，不能在发布机器上手工改包；负责人根据风险决定取消候选、回退旧版本或等待修复候选。修复候选必须再次经过低成本 CI、目标平台构建、产物启动、输入冒烟和 QA 验收，随后才进入正式发布。
+
+`git revert <bad-commit>` 在共享分支上创建一个“反向变化”新提交，不重写他人历史，适合代码层撤销但仍需重新构建和测试；重新发布旧 artifact 是部署层回退，使用已经验证过的旧包，适合新包本身有问题且旧包与服务/存档兼容；数据库或玩家存档回滚是数据层操作，可能造成进度丢失或协议不兼容，必须有备份、迁移策略、权限审批和演练，不能用 `git reset` 代替。若发布分支做了修复，还要把同一修复合回主线并保留回归测试，避免下一次发布重新引入。游戏映射是“逻辑可用”不等于“玩家在目标平台能操作”，发布门禁必须覆盖平台输入、资产、存档和网络接缝。
+</details>

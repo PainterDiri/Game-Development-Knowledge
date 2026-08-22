@@ -81,11 +81,15 @@ nav:
       - 阶段 0 · 工具链:
           - 工具链与 Git:
               - 课程与地图: courses/toolchain-and-git/README.md
-              - 1 · 构建系统的边界: courses/toolchain-and-git/lessons/01-build-system-model.md
-              - 2 · 可复现性与环境: courses/toolchain-and-git/lessons/02-reproducibility-and-environment.md
-              - 3 · Git 与资产协作: courses/toolchain-and-git/lessons/03-git-and-asset-collaboration.md
-              - 4 · 测试、构建与诊断: courses/toolchain-and-git/lessons/04-testing-building-and-diagnosis.md
-              - 5 · CI、发布与回滚: courses/toolchain-and-git/lessons/05-ci-release-and-rollback.md
+              - 1 · 程序、终端与项目: courses/toolchain-and-git/lessons/01-computer-terminal-and-project.md
+              - 2 · Git 日常基础: courses/toolchain-and-git/lessons/02-git-daily-workflow.md
+              - 3 · 分支、远端与同步: courses/toolchain-and-git/lessons/03-branches-remotes-and-sync.md
+              - 4 · 合并、冲突与恢复: courses/toolchain-and-git/lessons/04-integration-conflicts-and-recovery.md
+              - 5 · 专业团队工作流: courses/toolchain-and-git/lessons/05-professional-team-workflow.md
+              - 6 · 构建系统的边界: courses/toolchain-and-git/lessons/06-build-system-model.md
+              - 7 · 可复现性与环境: courses/toolchain-and-git/lessons/07-reproducibility-and-environment.md
+              - 8 · 测试、构建与诊断: courses/toolchain-and-git/lessons/08-testing-building-and-diagnosis.md
+              - 9 · CI、发布与回滚: courses/toolchain-and-git/lessons/09-ci-release-and-rollback.md
               - 主实践: courses/toolchain-and-git/practice.md
               - 主项目接缝: courses/toolchain-and-git/integration-contract.md
               - 练习题: courses/toolchain-and-git/assessments.md
@@ -111,6 +115,9 @@ nav:
       - 阶段 6 · 语言、AI 与引擎:
           - 编译原理与 DSL: courses/compiler-principles-and-dsl/README.md
           - 编程语言与脚本: courses/programming-language-principles/README.md
+          - 机器学习基础: courses/machine-learning-foundations/README.md
+          - LLM 与 Transformer: courses/llm-and-transformers/README.md
+          - 生成式 AI 游戏工程: courses/generative-ai-for-games/README.md
           - 游戏 AI: courses/game-ai/README.md
           - 游戏引擎架构: courses/game-engine-architecture/README.md
       - 阶段 7 · Unity 肉鸽:
