@@ -70,10 +70,12 @@
 - 随机、存档、网络和构建证据都能用显式版本、seed、schema 或故障样本重现；
 - 网络旁路或 UE 迁移失败不会阻塞单机 Unity 主线，且课程仍有自己的可判定验收。
 
-## 实践包门禁
+## 实践代码下载门禁
 
-- 有实践/答案/公开代码的课程使用 `practice-bundle.json` 显式列出打包输入；
-- 包可以在新目录解压，README 能说明使用顺序、文件角色、命令、预期结果和边界；
-- 起始代码与参考代码分离时角色准确；不能分离时明确标注 `starter-and-reference`；
-- ZIP 不包含构建输出、Unity/UE 缓存、个人目录、密钥、日志、私有绝对路径或大体积未审查资产；
-- 本地打包和 `sync_docs.py` 生成的下载包均通过 `check_repo.py`、`git diff --check` 和严格 MkDocs 构建。
+- 网站课程页可以独立完成学习；下载包只降低代码复制和运行成本，不替代正文、题面、答案和验收说明；
+- 有公开代码/fixture/契约的课程使用 schema 2 的 `practice-bundle.json`，声明 `downloadType: "practice-code"` 并显式列出输入与角色；
+- 包可以在新目录解压，README 能说明如何从网站题面进入、文件角色、语言/版本、命令、预期结果和已知限制；
+- 起始代码与参考代码分离时角色准确；当前只有参考基线时标记 `reference-code`，不能假装存在 starter；
+- ZIP 不包含网页答案、构建输出、Unity/UE 缓存、个人目录、密钥、日志、私有绝对路径或大体积未审查资产；
+- `sync_docs.py` 只为已发布课程生成 `<slug>-code.zip`，并在课程页和下载总页提供入口；
+- 本地打包和网站生成的下载包均通过 ZIP 解压测试、`check_repo.py`、`git diff --check` 和严格 MkDocs 构建。

@@ -26,7 +26,7 @@ clean-site:
 	rm -rf site
 
 COURSE ?= toolchain-and-git
-PRACTICE_OUTPUT ?= /tmp/$(COURSE)-practice.zip
+PRACTICE_OUTPUT ?= /tmp/$(COURSE)-code.zip
 
 practice-package:
 	python3 scripts/package_practice.py --course $(COURSE) --output $(PRACTICE_OUTPUT)

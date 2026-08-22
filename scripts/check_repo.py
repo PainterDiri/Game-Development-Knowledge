@@ -109,14 +109,19 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
     if bundle_manifest.exists():
         try:
             bundle = json.loads(read_text(bundle_manifest))
-            if bundle.get("schema") != 1 or bundle.get("slug") != slug:
-                errors.append(f"{slug}: practice-bundle.json must declare schema 1 and matching slug")
+            if bundle.get("schema") != 2 or bundle.get("slug") != slug:
+                errors.append(f"{slug}: practice-bundle.json must declare schema 2 and matching slug")
+            if bundle.get("downloadType") != "practice-code":
+                errors.append(f"{slug}: practice-bundle.json must declare downloadType practice-code")
             includes = bundle.get("include", [])
             if not includes:
                 errors.append(f"{slug}: practice-bundle.json include must not be empty")
+            allowed_roles = {"code", "starter-code", "reference-code", "test-fixture", "integration-contract", "supporting-material", "license"}
             for item in includes:
                 if not isinstance(item, dict) or not item.get("path") or not item.get("role"):
                     errors.append(f"{slug}: every bundle include needs path and role")
+                elif item["role"] not in allowed_roles:
+                    errors.append(f"{slug}: unsupported bundle role {item['role']!r}")
                 elif ".." in Path(item["path"]).parts or Path(item["path"]).is_absolute():
                     errors.append(f"{slug}: bundle path escapes course: {item['path']!r}")
                 elif not (base / item["path"]).exists():

@@ -20,4 +20,4 @@
 
 ## 实践整合与下载
 
-实践设计除课程本身的题面和验收外，还需遵守[共享项目契约](../roadmap/roguelite-project-contract.md)与[实践包规则](../roadmap/practice-bundles.md)：先独立验证，再通过明确接缝进入主 Unity 项目；需要公开下载时使用课程目录的 `practice-bundle.json` 白名单生成压缩包。
+实践设计除课程本身的题面和验收外，还需遵守[共享项目契约](../roadmap/roguelite-project-contract.md)与[实践代码下载规则](../roadmap/practice-bundles.md)：先独立验证，再通过明确接缝进入主 Unity 项目；需要公开下载时使用 schema 2 的 `practice-bundle.json` 白名单生成代码/资料压缩包，网页正文继续由网站承载。

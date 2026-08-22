@@ -74,4 +74,4 @@ graph TD
 
 ## 实践主线的更新
 
-课程实践现在围绕一个学习者自己的 `RogueSlice` 主仓库逐步构筑，但不把所有课程强行变成 Unity 作业：低层与理论课优先用可复现的小程序、库、fixture 和基准；软件工程、AI、引擎、数据库与资源课程逐步接入 Unity；网络课程保留旁路服务；UE 课程单独做迁移对照。每门课程只交付一个明确接缝，并可以下载实践包。详见[实践主线](practice-system.md)、[共享项目契约](roguelite-project-contract.md)和[实践包与下载](practice-bundles.md)。
+课程实践现在围绕一个学习者自己的 `RogueSlice` 主仓库逐步构筑，但不把所有课程强行变成 Unity 作业：低层与理论课优先用可复现的小程序、库、fixture 和基准；软件工程、AI、引擎、数据库与资源课程逐步接入 Unity；网络课程保留旁路服务；UE 课程单独做迁移对照。每门课程只交付一个明确接缝，并可以下载整理好的实践代码。详见[实践主线](practice-system.md)、[共享项目契约](roguelite-project-contract.md)和[实践包与下载](practice-bundles.md)。

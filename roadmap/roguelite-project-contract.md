@@ -27,7 +27,7 @@ RogueSlice/
 └── artifacts/                   # 本地构建、报告和截图；不提交
 ```
 
-`Unity/` 不是所有课程的工作目录。实践包中的文件必须先按照接缝说明放入 `tools/`、`contracts/`、`Unity/Assets/Game/` 或 `labs/`，而不是整个目录覆盖主项目。
+`Unity/` 不是所有课程的工作目录。实践代码下载包中的文件必须先按照接缝说明放入 `tools/`、`contracts/`、`Unity/Assets/Game/` 或 `labs/`，而不是整个目录覆盖主项目。
 
 ## 十个纵切片接缝
 

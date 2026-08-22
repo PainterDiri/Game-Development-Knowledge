@@ -123,10 +123,11 @@ nav:
           - 发行与毕业项目: courses/shipping-and-capstone/README.md
   - 路线与实践:
       - 路线总览: roadmap.md
+      - 实践代码下载: downloads/README.md
       - 培养方案映射: roadmap/curriculum-mapping.md
       - 实践主线: roadmap/practice-system.md
       - 共享项目契约: roadmap/roguelite-project-contract.md
-      - 实践包与下载: roadmap/practice-bundles.md
+      - 实践代码下载规则: roadmap/practice-bundles.md
       - 当前技术与拓展: roadmap/modern-expansions.md
   - 学习指南:
       - 如何学习、做题与实践: learning-workflow.md

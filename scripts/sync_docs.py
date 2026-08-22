@@ -106,19 +106,54 @@ def course_landing(course: dict) -> str:
 
 
 def sync_bundles(courses: list[dict]) -> set[str]:
-    """Generate ignored download archives for courses with explicit manifests."""
+    """Generate ignored code-download archives for published courses with manifests."""
     if DOWNLOADS_DOCS.exists():
         shutil.rmtree(DOWNLOADS_DOCS)
     DOWNLOADS_DOCS.mkdir(parents=True)
     bundled: set[str] = set()
     for course in courses:
+        if course["status"] != "completed":
+            continue
         manifest = COURSE_SOURCE / course["slug"] / "practice-bundle.json"
         if not manifest.is_file():
             continue
-        output = DOWNLOADS_DOCS / f"{course['slug']}-practice.zip"
+        output = DOWNLOADS_DOCS / f"{course['slug']}-code.zip"
         build_bundle(course["slug"], output)
         bundled.add(course["slug"])
+    (DOWNLOADS_DOCS / "README.md").write_text(downloads_landing(courses, bundled), encoding="utf-8")
     return bundled
+
+
+def downloads_landing(courses: list[dict], bundled: set[str]) -> str:
+    lines = [
+        "# 实践代码下载",
+        "",
+        "本页集中列出网站已经发布的实践代码下载。课程正文、实践题面、提示、答案和验收说明仍以课程页面为准；ZIP 只承载可运行代码、测试、fixture、配置和主项目接入契约。",
+        "",
+        "## 下载规则",
+        "",
+        "- 下载包由课程目录中的 `practice-bundle.json` 显式白名单生成，不会自动收集未审查文件；",
+        "- 包内不含 `Library/`、`DerivedDataCache/`、`dist/`、个人 `.practice/`、日志、密钥或用户绝对路径；",
+        "- `completed` 课程才会显示正式下载入口；尚未完成的课程不会发布空包或伪造代码；",
+        "- 参考代码不是唯一答案；请先完成网站题面，再用下载内容运行、对照或复制。",
+        "",
+        "## 当前可下载内容",
+        "",
+        "| 课程 | 下载 | 说明 |",
+        "|---|---|---|",
+    ]
+    for course in sorted(courses, key=lambda item: item["order"]):
+        if course["slug"] not in bundled:
+            continue
+        lines.append(
+            f"| [{course['title']}](../courses/{course['slug']}/README.md) | "
+            f"[下载 `{course['slug']}-code.zip`]({course['slug']}-code.zip) | "
+            f"{course['projectSlice']} |"
+        )
+    if not bundled:
+        lines.extend(["| 暂无 | — | 下一门完成课程通过代码包门禁后会出现在这里。 |"] )
+    lines.extend(["", "## 对课程作者的约束", "", "每门课程最多提供一个主实践和两个微实验。没有独立代码价值的课程也可以下载数据、fixture、脚本或参考输入，但不能为了有 ZIP 而强行塞入 Unity 工程。", ""])
+    return "\n".join(lines)
 
 
 def append_bundle_link(destination: Path, course: dict, bundled: set[str]) -> None:
@@ -130,12 +165,13 @@ def append_bundle_link(destination: Path, course: dict, bundled: set[str]) -> No
     marker = "<!-- practice-bundle-link -->"
     text = readme.read_text(encoding="utf-8")
     if marker in text:
-        return
+        text = text.split(marker, 1)[0].rstrip()
     text += (
         f"\n\n{marker}\n\n"
-        "## 下载实践包\n\n"
-        "页面阅读版之外，实践包把题面、折叠答案、集成契约和课程代码整理成一个可解压目录。"
-        f"\n\n[下载 `{course['slug']}-practice.zip`](../../downloads/{course['slug']}-practice.zip)"
+        "## 下载实践代码\n\n"
+        "学习内容仍在本页及课程实践页中；下载包只包含经过白名单审核的可运行代码、测试、配置和主项目接入契约。"
+        f"\n\n[下载 `{course['slug']}-code.zip`](../../downloads/{course['slug']}-code.zip) · "
+        "[查看全部实践代码下载](../../downloads/README.md)"
         "\n"
     )
     readme.write_text(text, encoding="utf-8")

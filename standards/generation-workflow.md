@@ -83,6 +83,8 @@ git diff --check
 
 不要让“共享一个 Unity 项目”变成跨课程共享内部状态。所有随机、存档、网络和构建证据必须有显式版本/seed/故障输入。
 
-## 5.2 生成可下载实践包
+## 5.2 生成可下载实践代码
 
-如果课程有 `practice.md`、`assessments.md` 或公开代码，研究完成后创建或更新 `practice-bundle.json`。它是打包白名单，不是自动收集目录。将题面、答案、接缝契约和代码按角色列出，排除缓存和个人状态；完成门禁后运行 `python3 scripts/package_practice.py --course <slug> --output <path>.zip` 或通过 `sync_docs.py` 生成网站下载包。
+网站必须先能独立承载课程正文、实践题面、提示、答案和验收。完成代码实践后，再创建或更新 `practice-bundle.json` 作为 schema 2 下载清单：只列出可运行代码、测试、fixture、配置、许可证和主项目接缝，不默认列入 `practice.md`、`assessments.md` 或课程 README。
+
+明确起始代码和参考实现的角色；如果课程只有一份可运行基线，标记为 `reference-code` 并在包 README 中说明。完成门禁后运行 `python3 scripts/package_practice.py --course <slug> --output <path>.zip`，再由 `sync_docs.py` 生成网站的 `<slug>-code.zip` 和集中下载页。没有独立代码价值的课程可以发布数据/fixture/脚本，也可以不创建 ZIP。
