@@ -28,7 +28,8 @@ knowledge-sets/<slug>/
 ├── labs/
 │   ├── README.md                # 实践题面与验收
 │   └── solutions.md             # 折叠提示与参考路线
-├── assessments/
+├── assessments.md               # 题目、最小提示与折叠解析的默认单页
+├── assessments/                 # 只有题量/类型确实需要拆分时才使用
 │   ├── questions.md
 │   ├── answers.md
 │   └── rubric.md                # 需要多维评价时使用
@@ -43,11 +44,11 @@ knowledge-sets/<slug>/
 
 ### 稳定职责
 
-- `README.md`：课程问题、前置、出口、推荐路径、环境和实践入口；
+- `README.md`：课程问题、前置、出口、推荐路径、环境和课程内导航入口；
 - `00-course-map.md`：章节为什么这样安排、难点、依赖和验证方式；
 - `lessons/`：文件名按阅读顺序编号，但章节结构由课程决定；
 - `labs/README.md` / `solutions.md`：题面与解法分开，解法默认折叠；
-- `questions.md` / `answers.md`：题目 ID 一一对应；
+- `assessments.md`：默认把题目、最小提示和折叠解析放在同一页，减少来回跳转；题量很大或需要多人协作时，才拆成 `assessments/questions.md` 与 `assessments/answers.md`，并保持 ID 一一对应；
 - `rubric.md`：只在快速自评或开放题确有价值时保留，内容按课程定制；
 - `glossary.md`：只收录会反复使用或容易混淆的术语；
 - `references/`：记录来源、版本、日期、用途和限制。

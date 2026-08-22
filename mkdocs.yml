@@ -79,7 +79,23 @@ nav:
   - 课程:
       - 课程总览: course-index.md
       - 阶段 0 · 工具链:
-          - 工具链与 Git: courses/toolchain-and-git/README.md
+          - 工具链与 Git:
+              - 课程首页: courses/toolchain-and-git/README.md
+              - 课程地图: courses/toolchain-and-git/lessons/00-course-map.md
+              - 1 · 源到产物: courses/toolchain-and-git/lessons/01-source-to-artifact.md
+              - 2 · 环境与依赖: courses/toolchain-and-git/lessons/02-environment-and-dependencies.md
+              - 3 · Git 协作: courses/toolchain-and-git/lessons/03-git-model-and-collaboration.md
+              - 4 · 游戏资产协作: courses/toolchain-and-git/lessons/04-game-assets-and-engine-workflows.md
+              - 5 · 构建与测试: courses/toolchain-and-git/lessons/05-build-test-and-manifest.md
+              - 6 · 调试与回归: courses/toolchain-and-git/lessons/06-debugging-and-regression.md
+              - 7 · CI、发布与回滚: courses/toolchain-and-git/lessons/07-ci-release-and-rollback.md
+              - 实践: courses/toolchain-and-git/labs/README.md
+              - 实践解法: courses/toolchain-and-git/labs/solutions.md
+              - 实践代码: courses/toolchain-and-git/code/repro-game/README.md
+              - 题目与折叠答案: courses/toolchain-and-git/assessments.md
+              - 术语表: courses/toolchain-and-git/notes/glossary.md
+              - 研究笔记: courses/toolchain-and-git/references/research-notes.md
+              - 参考书目: courses/toolchain-and-git/references/bibliography.md
       - 阶段 1 · 编程与数学:
           - C 程序设计: courses/c-programming/README.md
           - 离散数学: courses/discrete-mathematics/README.md

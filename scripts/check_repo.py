@@ -24,7 +24,6 @@ SCAFFOLD_FILES = ["README.md", "lessons/00-course-map.md", "references/research-
 COMPLETED_FILES = [
     *SCAFFOLD_FILES,
     "labs/README.md", "labs/solutions.md",
-    "assessments/questions.md", "assessments/answers.md",
     "references/bibliography.md",
 ]
 FORBIDDEN_PUBLIC_STATE = {
@@ -83,12 +82,20 @@ def main() -> int:
             if path.is_file() and path.name in FORBIDDEN_PUBLIC_STATE:
                 errors.append(f"{slug}: learner state must not be public: {path.relative_to(base)}")
 
+        assessment_path = base / "assessments.md"
         questions_path = base / "assessments/questions.md"
         answers_path = base / "assessments/answers.md"
         solutions_path = base / "labs/solutions.md"
+        if assessment_path.exists() and (questions_path.exists() or answers_path.exists()):
+            errors.append(f"{slug}: use either assessments.md or assessments/questions.md + answers.md, not both")
         if questions_path.exists() != answers_path.exists():
             errors.append(f"{slug}: questions.md and answers.md must be created together")
-        if questions_path.exists() and answers_path.exists():
+        if assessment_path.exists():
+            assessment_text = assessment_path.read_text(encoding="utf-8")
+            question_ids = set(QUESTION_ID_RE.findall(assessment_text))
+            if status == "completed" and question_ids and "<details>" not in assessment_text:
+                errors.append(f"{slug}: completed assessments.md must use <details> blocks")
+        elif questions_path.exists() and answers_path.exists():
             question_ids = set(QUESTION_ID_RE.findall(questions_path.read_text(encoding="utf-8")))
             answer_text = answers_path.read_text(encoding="utf-8")
             missing_answers = sorted(qid for qid in question_ids if qid not in answer_text)
@@ -96,6 +103,8 @@ def main() -> int:
                 errors.append(f"{slug}: answer file missing IDs: {', '.join(missing_answers)}")
             if status == "completed" and "<details>" not in answer_text:
                 errors.append(f"{slug}: completed answers.md must use <details> blocks")
+        elif status == "completed":
+            errors.append(f"{slug}: completed course needs assessments.md or split questions/answers")
         if status == "completed" and solutions_path.exists() and "<details>" not in solutions_path.read_text(encoding="utf-8"):
             errors.append(f"{slug}: completed labs/solutions.md must use <details> blocks")
 
