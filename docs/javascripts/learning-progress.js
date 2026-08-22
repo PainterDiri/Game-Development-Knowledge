@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "game-dev-knowledge:last-reading-position:v1";
   const RESUME_SESSION_KEY = "game-dev-knowledge:resume-target:v1";
+  const STAY_HOME_SESSION_KEY = "game-dev-knowledge:stay-home-once:v1";
   const SAVE_INTERVAL_MS = 500;
   const REDIRECT_DELAY_MS = 1200;
   const COURSE_SEGMENT = "/courses/";
@@ -21,10 +22,11 @@
   const isCoursePage = () => isSafeCoursePath(window.location.pathname);
   const isNotFoundPage = () => document.querySelector("article h1")?.textContent.trim() === NOT_FOUND_HEADING;
   const isTrackableCoursePage = () => isCoursePage() && !isNotFoundPage();
-  const isHomePage = () => {
-    const path = window.location.pathname.replace(/index\.html$/, "");
+  const isHomePath = (pathname) => {
+    const path = pathname.replace(/index\.html$/, "");
     return path === "/" || path.endsWith("/Game-Development-Knowledge/");
   };
+  const isHomePage = () => isHomePath(window.location.pathname);
 
   function readProgress() {
     try {
@@ -187,18 +189,22 @@
     host.prepend(panel);
 
     const countdown = panel.querySelector('[data-role="countdown"]');
-    countdown.textContent = repaired
-      ? "原阅读页面已调整，将自动返回这门课程的首页。"
-      : "即将自动跳转；本次需要浏览首页可点“留在首页”。";
-    const timer = window.setTimeout(() => resume(progress), REDIRECT_DELAY_MS);
+    const explicitlyOpenedHome = sessionStorage.getItem(STAY_HOME_SESSION_KEY) === "1";
+    sessionStorage.removeItem(STAY_HOME_SESSION_KEY);
+    countdown.textContent = explicitlyOpenedHome
+      ? "已从站内返回首页，本次不会自动跳转。"
+      : repaired
+        ? "原阅读页面已调整，将自动返回这门课程的首页。"
+        : "即将自动跳转；本次需要浏览首页可点“留在首页”。";
+    const timer = explicitlyOpenedHome ? null : window.setTimeout(() => resume(progress), REDIRECT_DELAY_MS);
 
     panel.querySelector('[data-action="resume"]').addEventListener("click", () => resume(progress));
     panel.querySelector('[data-action="stay"]').addEventListener("click", () => {
-      window.clearTimeout(timer);
-      countdown.textContent = "本次已留在首页；下次打开网站仍会自动续学。";
+      if (timer) window.clearTimeout(timer);
+      countdown.textContent = "本次已留在首页；下次直接打开网站仍会自动续学。";
     });
     panel.querySelector('[data-action="clear"]').addEventListener("click", () => {
-      window.clearTimeout(timer);
+      if (timer) window.clearTimeout(timer);
       clearProgress();
       panel.remove();
     });
@@ -234,6 +240,21 @@
     return true;
   }
 
+  function installHomeNavigationGuard() {
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!target || isHomePage()) return;
+      try {
+        const url = new URL(target.href, window.location.href);
+        if (url.origin === window.location.origin && isHomePath(url.pathname)) {
+          sessionStorage.setItem(STAY_HOME_SESSION_KEY, "1");
+        }
+      } catch (_) {
+        // Ignore malformed or non-navigation links.
+      }
+    });
+  }
+
   function installTracker() {
     let timer = null;
     const scheduleSave = () => {
@@ -252,6 +273,7 @@
 
   async function boot() {
     installTracker();
+    installHomeNavigationGuard();
     if (await recoverRemovedCoursePage()) return;
     restoreProgressIfRequested();
     await addResumePanel();
