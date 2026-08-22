@@ -27,6 +27,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>交付一个能从全新环境复现构建、测试和发布的最小游戏工程。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `adapter` · F0 可复现工程接缝</span>
+
 </div>
 
 ## 阶段 1 · 编程与数学
@@ -41,6 +43,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现并验证一个内存边界清晰、可调试的小型运行时组件库。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F1 运行时基础库</span>
+
 -   :material-book-open-page-variant-outline: **[离散数学](courses/discrete-mathematics/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P1</span> <span class="course-badge ">准备中</span>
@@ -48,6 +52,8 @@ flowchart TB
     用逻辑、集合、关系、图和状态机精确表达房间、规则与组合系统。
 
     <span class="course-outcome"><strong>出口：</strong>建立可验证的房间图、状态机或道具规则模型。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F2 房间图与规则</span>
 
 -   :material-book-open-page-variant-outline: **[游戏线性代数](courses/linear-algebra-for-games/README.md)**
 
@@ -57,6 +63,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>独立推导并实现一组可视化的 2D/3D 变换实验。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F3 战斗空间</span>
+
 -   :material-book-open-page-variant-outline: **[微积分与概率](courses/calculus-and-probability/README.md)**
 
     <span class="course-badge">D2</span> <span class="course-badge">P1/P3</span> <span class="course-badge ">准备中</span>
@@ -64,6 +72,8 @@ flowchart TB
     连接运动、插值、数值变化与可控随机，避免只会套公式。
 
     <span class="course-outcome"><strong>出口：</strong>构建可复现的运动与掉落模拟，并用数据验证分布和误差。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F4 运动与概率</span>
 
 </div>
 
@@ -79,6 +89,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>为房间、实体、事件或资源选择并实现合适的数据结构。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F1/F2 容器与查询</span>
+
 -   :material-book-open-page-variant-outline: **[算法分析](courses/advanced-data-structures-algorithms/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P1</span> <span class="course-badge ">准备中</span>
@@ -87,6 +99,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现可基准测试的寻路、查询或调度模块，并解释取舍。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F2 空间查询与调度</span>
+
 -   :material-book-open-page-variant-outline: **[游戏 OOP](courses/object-oriented-programming/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P0/P2</span> <span class="course-badge ">准备中</span>
@@ -94,6 +108,8 @@ flowchart TB
     用组合、接口、生命周期和所有权构建可维护的 C++/C# 玩法模块。
 
     <span class="course-outcome"><strong>出口：</strong>完成一个可扩展且可测试的战斗或道具领域模型。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `adapter` · F3/F4 领域模型</span>
 
 </div>
 
@@ -109,6 +125,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>用基准与性能数据解释一次真实的数据布局或缓存优化。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `adapter` · F7 性能证据</span>
+
 -   :material-book-open-page-variant-outline: **[操作系统](courses/operating-systems/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P0/P2</span> <span class="course-badge ">准备中</span>
@@ -117,6 +135,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现并诊断一个有明确所有权、同步和失败路径的并发任务实验。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `adapter` · F7 任务与所有权</span>
+
 -   :material-book-open-page-variant-outline: **[游戏软件工程](courses/software-engineering/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P3/P5</span> <span class="course-badge ">准备中</span>
@@ -124,6 +144,8 @@ flowchart TB
     围绕需求、边界、测试、CI、协作和演进控制项目复杂度。
 
     <span class="course-outcome"><strong>出口：</strong>把一个玩法模块交付成可维护、可回归、可持续迭代的工程切片。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `direct` · F5 纵切片工程骨架</span>
 
 </div>
 
@@ -139,6 +161,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现可迁移、可校验、可恢复的存档或内容数据方案。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `adapter` · F6 存档与内容数据</span>
+
 -   :material-book-open-page-variant-outline: **[多人游戏网络](courses/computer-networks/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">network-lab/P5</span> <span class="course-badge ">准备中</span>
@@ -146,6 +170,8 @@ flowchart TB
     从协议、拥塞、延迟和丢包理解多人同步的物理限制。
 
     <span class="course-outcome"><strong>出口：</strong>做出可观测的客户端/服务器实验并解释预测、插值与权威性。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`online-sidecar` · `adapter` · F8 联机实验</span>
 
 </div>
 
@@ -161,6 +187,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现一条最小渲染实验并能用帧数据定位视觉或性能问题。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`supporting-lab` · `export` · F3 渲染与反馈</span>
+
 -   :material-book-open-page-variant-outline: **[多媒体与资源管线](courses/multimedia-and-asset-pipeline/README.md)**
 
     <span class="course-badge">D2</span> <span class="course-badge">P3/P5</span> <span class="course-badge ">准备中</span>
@@ -168,6 +196,8 @@ flowchart TB
     理解纹理、动画、音频、压缩、导入和异步加载的生产成本。
 
     <span class="course-outcome"><strong>出口：</strong>建立可重复导入、校验、打包和加载的最小资源管线。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `export` · F6 资源管线</span>
 
 </div>
 
@@ -183,6 +213,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现一个带错误定位和测试的迷你配置 DSL。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `export` · F4 内容 DSL</span>
+
 -   :material-book-open-page-variant-outline: **[编程语言与脚本](courses/programming-language-principles/README.md)**
 
     <span class="course-badge">D2</span> <span class="course-badge">dsl-lab/P3</span> <span class="course-badge ">准备中</span>
@@ -190,6 +222,8 @@ flowchart TB
     比较类型、闭包、泛型、内存管理和并发模型，理解脚本边界。
 
     <span class="course-outcome"><strong>出口：</strong>为玩法脚本选择合适的执行与绑定方案，并说明安全和性能边界。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `adapter` · F4 玩法脚本边界</span>
 
 -   :material-book-open-page-variant-outline: **[游戏 AI](courses/game-ai/README.md)**
 
@@ -199,6 +233,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>实现一个能解释决策、复现行为并接受设计调参的敌人 AI。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `direct` · F4 敌人与生成</span>
+
 -   :material-book-open-page-variant-outline: **[游戏引擎架构](courses/game-engine-architecture/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P2/P4</span> <span class="course-badge ">准备中</span>
@@ -206,6 +242,8 @@ flowchart TB
     贯通帧循环、场景、实体组件、资源、序列化、反射与工具层。
 
     <span class="course-outcome"><strong>出口：</strong>构建一个小型运行时切片，并明确各系统的状态和生命周期。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `direct` · F5 运行时接缝</span>
 
 </div>
 
@@ -221,6 +259,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>完成可重复游玩 10–15 分钟、可测试和可打包的 2D 肉鸽核心循环。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `direct` · F5 Unity 核心纵切片</span>
+
 </div>
 
 ## 阶段 8 · UE、在线与优化
@@ -235,6 +275,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>在 UE 中重建一个边界清晰、可调试的玩法系统。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`ue-migration` · `standalone` · F9 UE 系统重建</span>
+
 -   :material-book-open-page-variant-outline: **[在线服务](courses/game-networking-and-services/README.md)**
 
     <span class="course-badge">D2→D3</span> <span class="course-badge">network-lab/P5</span> <span class="course-badge ">准备中</span>
@@ -243,6 +285,8 @@ flowchart TB
 
     <span class="course-outcome"><strong>出口：</strong>交付一个考虑信任边界、故障恢复与可观测性的在线功能原型。</span>
 
+    <span class="course-outcome"><strong>接缝：</strong>`online-sidecar` · `adapter` · F8 在线服务旁路</span>
+
 -   :material-book-open-page-variant-outline: **[优化、调试与工具](courses/optimization-debugging-and-tools/README.md)**
 
     <span class="course-badge">D3</span> <span class="course-badge">P3/P5</span> <span class="course-badge ">准备中</span>
@@ -250,6 +294,8 @@ flowchart TB
     建立测量优先的 CPU/GPU/内存诊断方法，并把重复劳动产品化为工具。
 
     <span class="course-outcome"><strong>出口：</strong>用证据修复一个性能或稳定性问题，并留下可复用的诊断工具。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shared-unity` · `adapter` · F7 性能与诊断</span>
 
 </div>
 
@@ -264,5 +310,7 @@ flowchart TB
     完成范围控制、测试、构建、平台适配、商店材料和上线后的版本闭环。
 
     <span class="course-outcome"><strong>出口：</strong>发布一个可下载、可复现构建并有完整验收证据的小型肉鸽游戏。</span>
+
+    <span class="course-outcome"><strong>接缝：</strong>`shipping` · `direct` · F10 发行候选版</span>
 
 </div>

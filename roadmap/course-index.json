@@ -14,7 +14,10 @@
       "status": "completed",
       "shortTitle": "工具链与 Git",
       "summary": "把环境、版本控制、构建、调试和自动检查变成可靠的日常工作流。",
-      "outcome": "交付一个能从全新环境复现构建、测试和发布的最小游戏工程。"
+      "outcome": "交付一个能从全新环境复现构建、测试和发布的最小游戏工程。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "adapter",
+      "projectSlice": "F0 可复现工程接缝"
     },
     {
       "order": 1,
@@ -27,7 +30,10 @@
       "status": "scaffolded",
       "shortTitle": "C 程序设计",
       "summary": "从内存、指针、数据布局和生命周期理解游戏底层，而不是只会写语法。",
-      "outcome": "实现并验证一个内存边界清晰、可调试的小型运行时组件库。"
+      "outcome": "实现并验证一个内存边界清晰、可调试的小型运行时组件库。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F1 运行时基础库"
     },
     {
       "order": 2,
@@ -40,7 +46,10 @@
       "status": "scaffolded",
       "shortTitle": "离散数学",
       "summary": "用逻辑、集合、关系、图和状态机精确表达房间、规则与组合系统。",
-      "outcome": "建立可验证的房间图、状态机或道具规则模型。"
+      "outcome": "建立可验证的房间图、状态机或道具规则模型。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F2 房间图与规则"
     },
     {
       "order": 3,
@@ -53,7 +62,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏线性代数",
       "summary": "掌握向量、矩阵、坐标系、旋转与投影在移动、相机和渲染中的机制。",
-      "outcome": "独立推导并实现一组可视化的 2D/3D 变换实验。"
+      "outcome": "独立推导并实现一组可视化的 2D/3D 变换实验。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F3 战斗空间"
     },
     {
       "order": 4,
@@ -66,7 +78,10 @@
       "status": "scaffolded",
       "shortTitle": "微积分与概率",
       "summary": "连接运动、插值、数值变化与可控随机，避免只会套公式。",
-      "outcome": "构建可复现的运动与掉落模拟，并用数据验证分布和误差。"
+      "outcome": "构建可复现的运动与掉落模拟，并用数据验证分布和误差。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F4 运动与概率"
     },
     {
       "order": 5,
@@ -79,7 +94,10 @@
       "status": "scaffolded",
       "shortTitle": "数据结构",
       "summary": "理解容器、队列、哈希、树、图、对象池的成本与运行时边界。",
-      "outcome": "为房间、实体、事件或资源选择并实现合适的数据结构。"
+      "outcome": "为房间、实体、事件或资源选择并实现合适的数据结构。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F1/F2 容器与查询"
     },
     {
       "order": 6,
@@ -92,7 +110,10 @@
       "status": "scaffolded",
       "shortTitle": "算法分析",
       "summary": "用复杂度、空间索引、图算法和调度方法解决规模化游戏问题。",
-      "outcome": "实现可基准测试的寻路、查询或调度模块，并解释取舍。"
+      "outcome": "实现可基准测试的寻路、查询或调度模块，并解释取舍。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F2 空间查询与调度"
     },
     {
       "order": 7,
@@ -105,7 +126,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏 OOP",
       "summary": "用组合、接口、生命周期和所有权构建可维护的 C++/C# 玩法模块。",
-      "outcome": "完成一个可扩展且可测试的战斗或道具领域模型。"
+      "outcome": "完成一个可扩展且可测试的战斗或道具领域模型。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "adapter",
+      "projectSlice": "F3/F4 领域模型"
     },
     {
       "order": 8,
@@ -118,7 +142,10 @@
       "status": "scaffolded",
       "shortTitle": "组成与体系结构",
       "summary": "把指令、缓存、数据布局、SIMD 和 CPU/GPU 协作映射到帧预算。",
-      "outcome": "用基准与性能数据解释一次真实的数据布局或缓存优化。"
+      "outcome": "用基准与性能数据解释一次真实的数据布局或缓存优化。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "adapter",
+      "projectSlice": "F7 性能证据"
     },
     {
       "order": 9,
@@ -131,7 +158,10 @@
       "status": "scaffolded",
       "shortTitle": "操作系统",
       "summary": "理解进程、线程、同步、文件、虚拟内存和任务系统如何支撑游戏运行时。",
-      "outcome": "实现并诊断一个有明确所有权、同步和失败路径的并发任务实验。"
+      "outcome": "实现并诊断一个有明确所有权、同步和失败路径的并发任务实验。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "adapter",
+      "projectSlice": "F7 任务与所有权"
     },
     {
       "order": 10,
@@ -144,7 +174,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏软件工程",
       "summary": "围绕需求、边界、测试、CI、协作和演进控制项目复杂度。",
-      "outcome": "把一个玩法模块交付成可维护、可回归、可持续迭代的工程切片。"
+      "outcome": "把一个玩法模块交付成可维护、可回归、可持续迭代的工程切片。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "direct",
+      "projectSlice": "F5 纵切片工程骨架"
     },
     {
       "order": 11,
@@ -157,7 +190,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏数据库",
       "summary": "从建模、约束、索引和事务设计存档、配置、账号与内容数据。",
-      "outcome": "实现可迁移、可校验、可恢复的存档或内容数据方案。"
+      "outcome": "实现可迁移、可校验、可恢复的存档或内容数据方案。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "adapter",
+      "projectSlice": "F6 存档与内容数据"
     },
     {
       "order": 12,
@@ -170,7 +206,10 @@
       "status": "scaffolded",
       "shortTitle": "多人游戏网络",
       "summary": "从协议、拥塞、延迟和丢包理解多人同步的物理限制。",
-      "outcome": "做出可观测的客户端/服务器实验并解释预测、插值与权威性。"
+      "outcome": "做出可观测的客户端/服务器实验并解释预测、插值与权威性。",
+      "practiceTrack": "online-sidecar",
+      "integrationMode": "adapter",
+      "projectSlice": "F8 联机实验"
     },
     {
       "order": 13,
@@ -183,7 +222,10 @@
       "status": "scaffolded",
       "shortTitle": "计算机图形学",
       "summary": "从变换、光栅化、着色与可见性理解画面如何生成以及为何变慢。",
-      "outcome": "实现一条最小渲染实验并能用帧数据定位视觉或性能问题。"
+      "outcome": "实现一条最小渲染实验并能用帧数据定位视觉或性能问题。",
+      "practiceTrack": "supporting-lab",
+      "integrationMode": "export",
+      "projectSlice": "F3 渲染与反馈"
     },
     {
       "order": 14,
@@ -196,7 +238,10 @@
       "status": "scaffolded",
       "shortTitle": "多媒体与资源管线",
       "summary": "理解纹理、动画、音频、压缩、导入和异步加载的生产成本。",
-      "outcome": "建立可重复导入、校验、打包和加载的最小资源管线。"
+      "outcome": "建立可重复导入、校验、打包和加载的最小资源管线。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "export",
+      "projectSlice": "F6 资源管线"
     },
     {
       "order": 15,
@@ -209,7 +254,10 @@
       "status": "scaffolded",
       "shortTitle": "编译原理与 DSL",
       "summary": "用词法、语法、AST、解释与诊断构建可控的游戏配置语言。",
-      "outcome": "实现一个带错误定位和测试的迷你配置 DSL。"
+      "outcome": "实现一个带错误定位和测试的迷你配置 DSL。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "export",
+      "projectSlice": "F4 内容 DSL"
     },
     {
       "order": 16,
@@ -222,7 +270,10 @@
       "status": "scaffolded",
       "shortTitle": "编程语言与脚本",
       "summary": "比较类型、闭包、泛型、内存管理和并发模型，理解脚本边界。",
-      "outcome": "为玩法脚本选择合适的执行与绑定方案，并说明安全和性能边界。"
+      "outcome": "为玩法脚本选择合适的执行与绑定方案，并说明安全和性能边界。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "adapter",
+      "projectSlice": "F4 玩法脚本边界"
     },
     {
       "order": 17,
@@ -235,7 +286,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏 AI",
       "summary": "把状态机、行为树、寻路、效用和程序化生成变成可调试的决策系统。",
-      "outcome": "实现一个能解释决策、复现行为并接受设计调参的敌人 AI。"
+      "outcome": "实现一个能解释决策、复现行为并接受设计调参的敌人 AI。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "direct",
+      "projectSlice": "F4 敌人与生成"
     },
     {
       "order": 18,
@@ -248,7 +302,10 @@
       "status": "scaffolded",
       "shortTitle": "游戏引擎架构",
       "summary": "贯通帧循环、场景、实体组件、资源、序列化、反射与工具层。",
-      "outcome": "构建一个小型运行时切片，并明确各系统的状态和生命周期。"
+      "outcome": "构建一个小型运行时切片，并明确各系统的状态和生命周期。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "direct",
+      "projectSlice": "F5 运行时接缝"
     },
     {
       "order": 19,
@@ -261,7 +318,10 @@
       "status": "scaffolded",
       "shortTitle": "Unity 肉鸽生产",
       "summary": "把战斗、房间、道具、随机、存档、反馈和工具整合为可玩的纵切片。",
-      "outcome": "完成可重复游玩 10–15 分钟、可测试和可打包的 2D 肉鸽核心循环。"
+      "outcome": "完成可重复游玩 10–15 分钟、可测试和可打包的 2D 肉鸽核心循环。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "direct",
+      "projectSlice": "F5 Unity 核心纵切片"
     },
     {
       "order": 20,
@@ -274,7 +334,10 @@
       "status": "scaffolded",
       "shortTitle": "UE 玩法编程",
       "summary": "把已有原理迁移到 UE C++、蓝图、Gameplay 框架与数据驱动工作流。",
-      "outcome": "在 UE 中重建一个边界清晰、可调试的玩法系统。"
+      "outcome": "在 UE 中重建一个边界清晰、可调试的玩法系统。",
+      "practiceTrack": "ue-migration",
+      "integrationMode": "standalone",
+      "projectSlice": "F9 UE 系统重建"
     },
     {
       "order": 21,
@@ -287,7 +350,10 @@
       "status": "scaffolded",
       "shortTitle": "在线服务",
       "summary": "把权威服务器、复制、匹配、账号、遥测和运营接口连成可信系统。",
-      "outcome": "交付一个考虑信任边界、故障恢复与可观测性的在线功能原型。"
+      "outcome": "交付一个考虑信任边界、故障恢复与可观测性的在线功能原型。",
+      "practiceTrack": "online-sidecar",
+      "integrationMode": "adapter",
+      "projectSlice": "F8 在线服务旁路"
     },
     {
       "order": 22,
@@ -300,7 +366,10 @@
       "status": "scaffolded",
       "shortTitle": "优化、调试与工具",
       "summary": "建立测量优先的 CPU/GPU/内存诊断方法，并把重复劳动产品化为工具。",
-      "outcome": "用证据修复一个性能或稳定性问题，并留下可复用的诊断工具。"
+      "outcome": "用证据修复一个性能或稳定性问题，并留下可复用的诊断工具。",
+      "practiceTrack": "shared-unity",
+      "integrationMode": "adapter",
+      "projectSlice": "F7 性能与诊断"
     },
     {
       "order": 23,
@@ -313,7 +382,10 @@
       "status": "scaffolded",
       "shortTitle": "发行与毕业项目",
       "summary": "完成范围控制、测试、构建、平台适配、商店材料和上线后的版本闭环。",
-      "outcome": "发布一个可下载、可复现构建并有完整验收证据的小型肉鸽游戏。"
+      "outcome": "发布一个可下载、可复现构建并有完整验收证据的小型肉鸽游戏。",
+      "practiceTrack": "shipping",
+      "integrationMode": "direct",
+      "projectSlice": "F10 发行候选版"
     }
   ]
 }

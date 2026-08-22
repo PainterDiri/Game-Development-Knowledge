@@ -17,6 +17,7 @@ site/
 docs/courses/
 docs/roadmap/
 docs/standards/
+docs/downloads/
 .pytest_cache/
 
 # Unity generated files

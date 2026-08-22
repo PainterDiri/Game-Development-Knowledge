@@ -71,3 +71,18 @@ git diff --check
 ```
 
 再人工检查正确性、可复现性、代码可运行性、游戏相关性、版本、引用、隐私、题答对应、实践验收和视觉可读性。只有正文达到深度门槛并且状态相符时才能标记 `completed`。通过后创建清晰 commit；远程、凭据和授权满足时再 push，不使用 `--force`。
+
+## 5.1 设计主项目接缝
+
+在写实践前读取课程索引中的 `practiceTrack`、`integrationMode`、`projectSlice`，并在课程首页或实践页回答：
+
+1. 这门课为什么适合直接改 Unity、导出到 Unity、使用旁路服务，或保持独立？
+2. 主项目消费的是代码、数据、fixture、性能证据还是设计决策？
+3. 谁拥有状态，适配器的边界和回滚点在哪里？
+4. 如果主项目环境不可用，课程的最小独立版本如何验收？
+
+不要让“共享一个 Unity 项目”变成跨课程共享内部状态。所有随机、存档、网络和构建证据必须有显式版本/seed/故障输入。
+
+## 5.2 生成可下载实践包
+
+如果课程有 `practice.md`、`assessments.md` 或公开代码，研究完成后创建或更新 `practice-bundle.json`。它是打包白名单，不是自动收集目录。将题面、答案、接缝契约和代码按角色列出，排除缓存和个人状态；完成门禁后运行 `python3 scripts/package_practice.py --course <slug> --output <path>.zip` 或通过 `sync_docs.py` 生成网站下载包。

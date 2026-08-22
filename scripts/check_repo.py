@@ -35,6 +35,8 @@ SECRET_RES = [
 QUESTION_ID_RE = re.compile(r"^###\s+((?:[A-Z][A-Z0-9-]*-)?Q\d+|综合题)\s*[：:]", re.MULTILINE)
 COMPLETION_MARKERS = ("待课程生成时填写", "待研究后填写", "待设计", "待定义")
 VALID_STATUSES = {"planned", "scaffolded", "in-progress", "completed"}
+VALID_PRACTICE_TRACKS = {"supporting-lab", "shared-unity", "online-sidecar", "ue-migration", "shipping"}
+VALID_INTEGRATION_MODES = {"direct", "adapter", "export", "standalone"}
 QUALITY_SIGNALS = {
     "mechanism": ("机制", "不变量", "定义与边界"),
     "example": ("示例", "```", "命令"),
@@ -61,6 +63,7 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
     questions_path = base / "assessments/questions.md"
     answers_path = base / "assessments/answers.md"
     practice_path = base / "practice.md"
+    bundle_manifest = base / "practice-bundle.json"
     old_lab_questions = base / "labs/README.md"
     old_lab_solutions = base / "labs/solutions.md"
 
@@ -98,6 +101,28 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
             errors.append(f"{slug}: completed labs/solutions.md must use <details> blocks")
     elif status == "completed":
         errors.append(f"{slug}: completed course needs practice.md or legacy labs/README.md + labs/solutions.md")
+
+    has_public_practice_material = practice_path.exists() or assessment_path.exists() or (base / "code").exists()
+    if status in {"in-progress", "completed"} and has_public_practice_material and not bundle_manifest.exists():
+        errors.append(f"{slug}: public practice material needs practice-bundle.json")
+
+    if bundle_manifest.exists():
+        try:
+            bundle = json.loads(read_text(bundle_manifest))
+            if bundle.get("schema") != 1 or bundle.get("slug") != slug:
+                errors.append(f"{slug}: practice-bundle.json must declare schema 1 and matching slug")
+            includes = bundle.get("include", [])
+            if not includes:
+                errors.append(f"{slug}: practice-bundle.json include must not be empty")
+            for item in includes:
+                if not isinstance(item, dict) or not item.get("path") or not item.get("role"):
+                    errors.append(f"{slug}: every bundle include needs path and role")
+                elif ".." in Path(item["path"]).parts or Path(item["path"]).is_absolute():
+                    errors.append(f"{slug}: bundle path escapes course: {item['path']!r}")
+                elif not (base / item["path"]).exists():
+                    errors.append(f"{slug}: bundle input missing: {item['path']}")
+        except (json.JSONDecodeError, OSError) as exc:
+            errors.append(f"{slug}: invalid practice-bundle.json: {exc}")
 
     lessons_dir = base / "lessons"
     lesson_files = [p for p in lessons_dir.glob("*.md") if p.name != "00-course-map.md"] if lessons_dir.exists() else []
@@ -151,9 +176,13 @@ def main() -> int:
         statuses[status] += 1
         if status not in VALID_STATUSES:
             errors.append(f"{slug}: invalid status {status!r}")
-        for key in ("title", "shortTitle", "summary", "outcome", "depth", "phase", "practice"):
+        for key in ("title", "shortTitle", "summary", "outcome", "depth", "phase", "practice", "practiceTrack", "integrationMode", "projectSlice"):
             if key not in course or course[key] in (None, ""):
                 errors.append(f"{slug}: missing metadata field {key}")
+        if course.get("practiceTrack") not in VALID_PRACTICE_TRACKS:
+            errors.append(f"{slug}: invalid practiceTrack {course.get('practiceTrack')!r}")
+        if course.get("integrationMode") not in VALID_INTEGRATION_MODES:
+            errors.append(f"{slug}: invalid integrationMode {course.get('integrationMode')!r}")
 
         base = ROOT / "knowledge-sets" / slug
         if not base.exists():

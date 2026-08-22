@@ -7,6 +7,8 @@
 <span class="course-badge course-complete">可学习</span>
 </div>
 
+> **实践接缝**：`supporting-lab` / `adapter` / F0 可复现工程接缝。课程先用无引擎 Python 练习验证工具链，再把 `contentVersion + buildId + seed + runId` 契约接入你的 Unity 主项目；不要求把 Python 代码直接放进 Unity。
+
 > **这不是 Git 命令课。** 这是一门交付工程课：你要学会把一个游戏项目的输入、转换、验证、产物和失败证据连成一条可以重建的链。
 
 ## 先建立一个总模型
@@ -70,6 +72,10 @@ artifact = Build(
 - 删除 `Library/` 或 `DerivedDataCache/` 后，为什么项目仍应能恢复？
 - 为什么一个可执行文件不能证明它来自哪个提交？
 - 为什么 `seed=42` 必须出现在失败报告中，而不是只出现在开发者记忆里？
+
+## 与小以撒主项目的关系
+
+这门课交付的不是一个要长期维护的独立小游戏，而是主项目的第一条工程接缝：以后房间生成、掉落、敌人波次、回放和 bug 报告都必须能回答“哪个构建、哪份内容、哪个 seed、哪次运行”。完成实践后，将 [`integration-contract.md`](integration-contract.md) 中的字段以 C# 接口或等价适配器接入你的 Unity 项目；领域规则仍由后续课程实现。
 
 ## 一条主实践，贯穿五章
 

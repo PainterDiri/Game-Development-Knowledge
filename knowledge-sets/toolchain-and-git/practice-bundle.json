@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "slug": "toolchain-and-git",
+  "title": "游戏开发工具链与可复现工程",
+  "bundleName": "toolchain-and-git-practice",
+  "include": [
+    {
+      "path": "README.md",
+      "role": "course-map"
+    },
+    {
+      "path": "practice.md",
+      "role": "brief"
+    },
+    {
+      "path": "assessments.md",
+      "role": "answers"
+    },
+    {
+      "path": "integration-contract.md",
+      "role": "integration-contract"
+    },
+    {
+      "path": "code/repro-game",
+      "role": "starter-and-reference"
+    }
+  ],
+  "exclude": [
+    "dist",
+    "__pycache__"
+  ]
+}

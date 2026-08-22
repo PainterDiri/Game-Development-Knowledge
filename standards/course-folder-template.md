@@ -40,7 +40,9 @@ knowledge-sets/<slug>/
 - `assessments.md`：题目和答案同页。用 `<details>` 隐藏提示与解析；只保留可判定、能区分理解层次并能迁移到游戏工程的问题。
 - `references/`：用于记录来源、版本、访问日期、用途、限制和不确定点，服务维护与审计，不是学习者必须逐页阅读的主路径。
 - `notes/glossary.md`：非默认文件。术语首次出现时就地解释；只有大量反复混淆的术语才值得单独索引。
-- `code/`：说明语言/版本、运行命令、预期结果、已知限制；不提交引擎缓存、构建输出或个人练习状态。
+- `code/`：说明语言/版本、运行命令、预期结果、已知限制；不提交引擎缓存、构建输出或个人练习状态；有起始/参考两套代码时分目录维护。
+- `integration-contract.md`：说明课程产物如何与 `RogueSlice` 主项目相接，包含输入/输出、状态所有者、适配器、回滚和主项目冒烟；不要求所有课程都直接改 Unity。
+- `practice-bundle.json`：下载包显式白名单。仅在有公开实践/答案/代码时创建；打包器不会自动收集未列出的文件。
 
 旧版 `lessons/00-course-map.md`、`labs/README.md` + `labs/solutions.md`、分离的 `assessments/questions.md` + `answers.md` 仍可兼容维护，但新课程不要为了格式而拆页。
 

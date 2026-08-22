@@ -2,7 +2,7 @@ VENV := .venv
 PYTHON := $(VENV)/bin/python
 MKDOCS := $(VENV)/bin/mkdocs
 
-.PHONY: install docs-sync docs-serve docs-build check clean-site
+.PHONY: install docs-sync docs-serve docs-build check clean-site practice-package
 
 install:
 	python3 -m venv $(VENV)
@@ -24,3 +24,9 @@ check: docs-sync
 
 clean-site:
 	rm -rf site
+
+COURSE ?= toolchain-and-git
+PRACTICE_OUTPUT ?= /tmp/$(COURSE)-practice.zip
+
+practice-package:
+	python3 scripts/package_practice.py --course $(COURSE) --output $(PRACTICE_OUTPUT)

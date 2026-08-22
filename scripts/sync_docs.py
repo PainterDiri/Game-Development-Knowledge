@@ -8,6 +8,8 @@ import shutil
 from collections import defaultdict
 from pathlib import Path
 
+from package_practice import build_bundle
+
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 COURSE_SOURCE = ROOT / "knowledge-sets"
@@ -16,6 +18,7 @@ STANDARDS_SOURCE = ROOT / "standards"
 COURSE_DOCS = DOCS / "courses"
 ROADMAP_DOCS = DOCS / "roadmap"
 STANDARDS_DOCS = DOCS / "standards"
+DOWNLOADS_DOCS = DOCS / "downloads"
 
 PHASE_NAMES = {
     0: "工具链",
@@ -84,6 +87,12 @@ def course_landing(course: dict) -> str:
 
 {course['summary']}
 
+## 实践接缝
+
+- **轨道**：`{course['practiceTrack']}`
+- **集成方式**：`{course['integrationMode']}`
+- **主项目切片**：{course['projectSlice']}
+
 ## 学完后的可验证出口
 
 {course['outcome']}
@@ -96,7 +105,43 @@ def course_landing(course: dict) -> str:
 """
 
 
-def sync_courses(courses: list[dict]) -> None:
+def sync_bundles(courses: list[dict]) -> set[str]:
+    """Generate ignored download archives for courses with explicit manifests."""
+    if DOWNLOADS_DOCS.exists():
+        shutil.rmtree(DOWNLOADS_DOCS)
+    DOWNLOADS_DOCS.mkdir(parents=True)
+    bundled: set[str] = set()
+    for course in courses:
+        manifest = COURSE_SOURCE / course["slug"] / "practice-bundle.json"
+        if not manifest.is_file():
+            continue
+        output = DOWNLOADS_DOCS / f"{course['slug']}-practice.zip"
+        build_bundle(course["slug"], output)
+        bundled.add(course["slug"])
+    return bundled
+
+
+def append_bundle_link(destination: Path, course: dict, bundled: set[str]) -> None:
+    if course["slug"] not in bundled:
+        return
+    readme = destination / "README.md"
+    if not readme.is_file():
+        return
+    marker = "<!-- practice-bundle-link -->"
+    text = readme.read_text(encoding="utf-8")
+    if marker in text:
+        return
+    text += (
+        f"\n\n{marker}\n\n"
+        "## 下载实践包\n\n"
+        "页面阅读版之外，实践包把题面、折叠答案、集成契约和课程代码整理成一个可解压目录。"
+        f"\n\n[下载 `{course['slug']}-practice.zip`](../../downloads/{course['slug']}-practice.zip)"
+        "\n"
+    )
+    readme.write_text(text, encoding="utf-8")
+
+
+def sync_courses(courses: list[dict], bundled: set[str]) -> None:
     if COURSE_DOCS.exists():
         shutil.rmtree(COURSE_DOCS)
     COURSE_DOCS.mkdir(parents=True)
@@ -109,6 +154,7 @@ def sync_courses(courses: list[dict]) -> None:
             (destination / "README.md").write_text(course_landing(course), encoding="utf-8")
         else:
             copy_public_tree(source, destination)
+            append_bundle_link(destination, course, bundled)
 
 
 def build_course_catalog(courses: list[dict]) -> str:
@@ -149,24 +195,25 @@ def build_course_catalog(courses: list[dict]) -> str:
                 "",
                 f"    <span class=\"course-outcome\"><strong>出口：</strong>{course['outcome']}</span>",
                 "",
+                f"    <span class=\"course-outcome\"><strong>接缝：</strong>`{course['practiceTrack']}` · `{course['integrationMode']}` · {html.escape(course['projectSlice'])}</span>",
+                "",
             ])
         lines.extend(["</div>", ""])
     return "\n".join(lines)
 
 
 def build_metadata_index(courses: list[dict]) -> str:
-    rows = [
-        f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {c['practice']} | `{c['status']}` |"
-        for c in courses
-    ]
     return "\n".join([
         "# 课程元数据索引",
         "",
         "本页供维护流程核对顺序、深度、阶段、实践接口和公开内容状态。普通学习请使用网站的课程总览。",
         "",
-        "| 顺序 | 课程 | 深度 | 阶段 | 实践 | 状态 |",
-        "|---:|---|---:|---:|---|---|",
-        *rows,
+        "| 顺序 | 课程 | 深度 | 阶段 | 实践 | 接缝轨道 | 集成方式 | 主项目切片 | 状态 |",
+        "|---:|---|---:|---:|---|---|---|---|---|",
+        *[
+            f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {c['practice']} | `{c['practiceTrack']}` | `{c['integrationMode']}` | {c['projectSlice']} | `{c['status']}` |"
+            for c in courses
+        ],
         "",
     ])
 
@@ -178,10 +225,11 @@ def main() -> int:
     (ROADMAP_SOURCE / "course-index.md").write_text(build_metadata_index(courses), encoding="utf-8")
     copy_public_tree(ROADMAP_SOURCE, ROADMAP_DOCS)
     copy_public_tree(STANDARDS_SOURCE, STANDARDS_DOCS)
-    sync_courses(courses)
+    bundled = sync_bundles(courses)
+    sync_courses(courses, bundled)
     (DOCS / "course-index.md").write_text(build_course_catalog(courses), encoding="utf-8")
 
-    print(f"Synced {len(courses)} courses; scaffolded courses publish concise landing pages only")
+    print(f"Synced {len(courses)} courses; generated {len(bundled)} practice bundle(s); scaffolded courses publish concise landing pages only")
     return 0
 
 
