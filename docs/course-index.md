@@ -21,7 +21,7 @@ flowchart TB
 
 -   :material-book-open-page-variant-outline: **[工具链与 Git](courses/toolchain-and-git/README.md)**
 
-    <span class="course-badge">D2</span> <span class="course-badge">P0</span> <span class="course-badge ">准备中</span>
+    <span class="course-badge">D2</span> <span class="course-badge">P0</span> <span class="course-badge is-ready">可学习</span>
 
     把环境、版本控制、构建、调试和自动检查变成可靠的日常工作流。
 

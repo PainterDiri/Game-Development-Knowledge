@@ -11,7 +11,7 @@
       "depth": "D2",
       "phase": 0,
       "practice": "P0",
-      "status": "scaffolded",
+      "status": "completed",
       "shortTitle": "工具链与 Git",
       "summary": "把环境、版本控制、构建、调试和自动检查变成可靠的日常工作流。",
       "outcome": "交付一个能从全新环境复现构建、测试和发布的最小游戏工程。"
