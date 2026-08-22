@@ -16,15 +16,15 @@
 
 默认依赖方向：
 
-```text
-Presentation/UI/Audio/VFX
-             ↓ 订阅只读状态或请求命令
-Gameplay rules / Domain
-             ↓ 依赖抽象接口
-Runtime adapters / Engine integration
-             ↓
-Platform / Persistence / Network / Filesystem
+```mermaid
+flowchart TD
+    P[Presentation / UI / Audio / VFX] -->|读取状态、提交命令| D[Gameplay Rules / Domain]
+    D -->|声明 Port / Interface| I[抽象边界]
+    A[Runtime Adapter / Engine Integration] -->|实现| I
+    A --> X[Platform / Persistence / Network / Filesystem]
 ```
+
+领域层只认识自己声明的抽象边界；引擎、存档、网络等适配器向内实现边界，具体平台依赖停留在外层。
 
 核心规则：
 

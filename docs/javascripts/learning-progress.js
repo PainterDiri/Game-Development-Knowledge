@@ -34,7 +34,14 @@
   function saveProgress() {
     if (!isCoursePage()) return;
     const heading = nearestHeading();
-    const articleTitle = document.querySelector("article h1")?.textContent?.trim() || document.title;
+    const titleHeading = document.querySelector("article h1");
+    const articleTitle = titleHeading
+      ? Array.from(titleHeading.childNodes)
+          .filter((node) => !(node.nodeType === 1 && node.classList.contains("headerlink")))
+          .map((node) => node.textContent)
+          .join("")
+          .trim()
+      : document.title;
     const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     const value = {
       path: window.location.pathname,

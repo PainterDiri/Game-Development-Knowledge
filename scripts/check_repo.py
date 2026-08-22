@@ -1,67 +1,44 @@
 #!/usr/bin/env python3
-"""Lightweight repository checks; intentionally dependency-free."""
+"""Dependency-free repository checks for public course content."""
 from __future__ import annotations
 
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
-    "AGENTS.md",
-    "README.md",
-    "mkdocs.yml",
-    "requirements.txt",
-    ".github/workflows/pages.yml",
-    "docs/automatic-progress.md",
-    "docs/javascripts/learning-progress.js",
-    "docs/stylesheets/learning-progress.css",
-    "roadmap/README.md",
-    "roadmap/curriculum-mapping.md",
-    "roadmap/practice-system.md",
-    "roadmap/course-index.json",
-    "standards/README.md",
-    "standards/knowledge-generation-spec.md",
-    "standards/generation-workflow.md",
-    "standards/course-folder-template.md",
-    "standards/research-and-citation.md",
-    "standards/practice-design.md",
-    "standards/naming-and-architecture.md",
-    "standards/quality-gates.md",
-    "standards/ai-course-prompt.md",
-    "knowledge-sets/README.md",
+    "AGENTS.md", "README.md", "mkdocs.yml", "requirements.txt", ".github/workflows/pages.yml",
+    "docs/automatic-progress.md", "docs/javascripts/learning-progress.js",
+    "docs/javascripts/learning-ui.js", "docs/stylesheets/learning-progress.css", "docs/stylesheets/site.css",
+    "roadmap/README.md", "roadmap/curriculum-mapping.md", "roadmap/practice-system.md",
+    "roadmap/course-index.json", "standards/README.md", "standards/knowledge-generation-spec.md",
+    "standards/generation-workflow.md", "standards/course-folder-template.md",
+    "standards/research-and-citation.md", "standards/practice-design.md",
+    "standards/naming-and-architecture.md", "standards/quality-gates.md",
+    "standards/ai-course-prompt.md", "knowledge-sets/README.md",
 ]
-COURSE_FILES = [
-    "README.md",
-    "lessons/00-course-map.md",
-    "labs/README.md",
-    "labs/solutions.md",
-    "assessments/questions.md",
-    "assessments/answers.md",
-    "assessments/rubric.md",
-    "notes/glossary.md",
-    "references/research-notes.md",
+SCAFFOLD_FILES = ["README.md", "lessons/00-course-map.md", "references/research-notes.md"]
+COMPLETED_FILES = [
+    *SCAFFOLD_FILES,
+    "labs/README.md", "labs/solutions.md",
+    "assessments/questions.md", "assessments/answers.md",
     "references/bibliography.md",
 ]
-FORBIDDEN_PUBLIC_STATE = [
-    "progress.md",
-    "exercise-log.md",
-    "mistakes.md",
-    "decision-log.md",
-    "workspace",
-    "notes/exercise-log.md",
-    "notes/mistakes.md",
-    "notes/decision-log.md",
-]
-SKIP_PARTS = {".git", ".venv", ".practice", "site"}
+FORBIDDEN_PUBLIC_STATE = {
+    "progress.md", "exercise-log.md", "mistakes.md", "decision-log.md", "workspace"
+}
+SKIP_PARTS = {".git", ".venv", ".practice", "site", "__pycache__"}
 PRIVATE_PATH_RE = re.compile(r"/(?:Users|home)/[^/\s`]+/")
 SECRET_RES = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
     re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----"),
 ]
 QUESTION_ID_RE = re.compile(r"^###\s+((?:[A-Z][A-Z0-9-]*-)?Q\d+|综合题)\s*[：:]", re.MULTILINE)
-COMPLETION_MARKERS = ("待课程生成时填写", "待研究后填写", "待设计", "[ ] 待定义")
+COMPLETION_MARKERS = ("待课程生成时填写", "待研究后填写", "待设计", "待定义")
+VALID_STATUSES = {"planned", "scaffolded", "in-progress", "completed"}
 
 
 def is_public_path(path: Path) -> bool:
@@ -82,52 +59,60 @@ def main() -> int:
 
     slugs: set[str] = set()
     orders: list[int] = []
+    statuses: Counter[str] = Counter()
     for course in index.get("courses", []):
         slug = course.get("slug", "")
+        status = course.get("status", "")
         if not slug or slug in slugs:
             errors.append(f"duplicate or empty course slug: {slug!r}")
         slugs.add(slug)
         orders.append(course.get("order"))
-        base = ROOT / "knowledge-sets" / slug
+        statuses[status] += 1
+        if status not in VALID_STATUSES:
+            errors.append(f"{slug}: invalid status {status!r}")
+        for key in ("title", "shortTitle", "summary", "outcome", "depth", "phase", "practice"):
+            if key not in course or course[key] in (None, ""):
+                errors.append(f"{slug}: missing metadata field {key}")
 
-        for rel in COURSE_FILES:
+        base = ROOT / "knowledge-sets" / slug
+        required_files = COMPLETED_FILES if status == "completed" else SCAFFOLD_FILES
+        for rel in required_files:
             if not (base / rel).exists():
-                errors.append(f"{slug}: missing {rel}")
-        for rel in FORBIDDEN_PUBLIC_STATE:
-            if (base / rel).exists():
-                errors.append(f"{slug}: learner state must not be public: {rel}")
+                errors.append(f"{slug}: missing {rel} for status {status}")
+        for path in base.rglob("*") if base.exists() else []:
+            if path.is_file() and path.name in FORBIDDEN_PUBLIC_STATE:
+                errors.append(f"{slug}: learner state must not be public: {path.relative_to(base)}")
 
         questions_path = base / "assessments/questions.md"
         answers_path = base / "assessments/answers.md"
         solutions_path = base / "labs/solutions.md"
+        if questions_path.exists() != answers_path.exists():
+            errors.append(f"{slug}: questions.md and answers.md must be created together")
         if questions_path.exists() and answers_path.exists():
             question_ids = set(QUESTION_ID_RE.findall(questions_path.read_text(encoding="utf-8")))
             answer_text = answers_path.read_text(encoding="utf-8")
             missing_answers = sorted(qid for qid in question_ids if qid not in answer_text)
             if missing_answers:
                 errors.append(f"{slug}: answer file missing IDs: {', '.join(missing_answers)}")
-            if "<details>" not in answer_text:
-                errors.append(f"{slug}: assessments/answers.md must use <details> blocks")
-        if solutions_path.exists() and "<details>" not in solutions_path.read_text(encoding="utf-8"):
-            errors.append(f"{slug}: labs/solutions.md must use <details> blocks")
+            if status == "completed" and "<details>" not in answer_text:
+                errors.append(f"{slug}: completed answers.md must use <details> blocks")
+        if status == "completed" and solutions_path.exists() and "<details>" not in solutions_path.read_text(encoding="utf-8"):
+            errors.append(f"{slug}: completed labs/solutions.md must use <details> blocks")
 
-        if course.get("status") == "completed":
-            for rel in COURSE_FILES:
+        if status == "completed":
+            lesson_files = [p for p in (base / "lessons").glob("*.md") if p.name != "00-course-map.md"]
+            if not lesson_files:
+                errors.append(f"{slug}: completed course has no lesson beyond the course map")
+            for rel in COMPLETED_FILES + [str(p.relative_to(base)) for p in lesson_files]:
                 path = base / rel
-                if not path.exists():
-                    continue
-                text = path.read_text(encoding="utf-8")
-                markers = [marker for marker in COMPLETION_MARKERS if marker in text]
-                if markers:
-                    errors.append(
-                        f"{slug}: completed course still contains scaffold marker(s) in {rel}: "
-                        + ", ".join(markers)
-                    )
+                if path.exists():
+                    markers = [m for m in COMPLETION_MARKERS if m in path.read_text(encoding="utf-8")]
+                    if markers:
+                        errors.append(f"{slug}: completed file contains scaffold markers in {rel}: {', '.join(markers)}")
 
     if orders != sorted(orders):
         errors.append("course orders are not monotonic")
 
-    # Check local Markdown links, ignoring URLs, anchors, and template placeholders.
     link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
     for md in ROOT.rglob("*.md"):
         if not is_public_path(md):
@@ -140,37 +125,29 @@ def main() -> int:
                 errors.append(f"{md.relative_to(ROOT)}: contains a possible secret")
         for target in link_re.findall(text):
             target = target.split("#", 1)[0].strip()
-            if (
-                not target
-                or target in {"URL", "slug", "course-slug"}
-                or "://" in target
-                or target.startswith("mailto:")
-                or "<" in target
-            ):
+            if not target or target in {"URL", "slug", "course-slug"} or "://" in target or target.startswith("mailto:") or "<" in target:
                 continue
-            candidate = (md.parent / target).resolve()
-            if not candidate.exists():
+            if not (md.parent / target).resolve().exists():
                 errors.append(f"{md.relative_to(ROOT)}: broken link -> {target}")
 
-    mkdocs_path = ROOT / "mkdocs.yml"
-    if mkdocs_path.exists():
-        mkdocs_text = mkdocs_path.read_text(encoding="utf-8")
+    if (ROOT / "mkdocs.yml").exists():
+        config = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
         for asset in (
-            "javascripts/learning-progress.js",
-            "stylesheets/learning-progress.css",
+            "javascripts/learning-progress.js", "javascripts/learning-ui.js",
+            "stylesheets/learning-progress.css", "stylesheets/site.css",
         ):
-            if asset not in mkdocs_text:
-                errors.append(f"mkdocs.yml does not load automatic-resume asset: {asset}")
+            if asset not in config:
+                errors.append(f"mkdocs.yml does not load required asset: {asset}")
+        if "name: mermaid" not in config:
+            errors.append("mkdocs.yml does not configure Mermaid")
 
     if errors:
         print("CHECK FAILED")
         print("\n".join(f"- {error}" for error in errors))
         return 1
 
-    print(
-        f"CHECK OK: {len(index.get('courses', []))} course scaffolds, "
-        "public content, answer files, automatic-resume assets and local links valid"
-    )
+    status_summary = ", ".join(f"{key}={value}" for key, value in sorted(statuses.items()))
+    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); links, privacy, UI assets and state rules valid")
     return 0
 
 

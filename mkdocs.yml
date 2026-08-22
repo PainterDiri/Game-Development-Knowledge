@@ -8,20 +8,31 @@ edit_uri: edit/main/
 theme:
   name: material
   language: zh
+  icon:
+    logo: material/controller-classic
+    repo: fontawesome/brands/github
   features:
-    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.top
+    - toc.follow
+    - search.suggest
     - search.highlight
     - content.code.copy
+    - content.tabs.link
     - content.action.edit
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: indigo
+      accent: deep purple
       toggle:
         icon: material/weather-sunny
         name: 切换到深色模式
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: indigo
+      accent: deep purple
       toggle:
         icon: material/weather-night
         name: 切换到浅色模式
@@ -30,10 +41,18 @@ theme:
 markdown_extensions:
   - admonition
   - attr_list
+  - md_in_html
   - pymdownx.details
   - pymdownx.highlight
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - tables
@@ -45,35 +64,71 @@ plugins:
 
 extra_javascript:
   - javascripts/learning-progress.js
+  - javascripts/learning-ui.js
 
 extra_css:
   - stylesheets/learning-progress.css
+  - stylesheets/site.css
 
 not_in_nav: |
-  /courses/**
   /roadmap/README.md
+  /roadmap/course-index.md
 
 nav:
   - 首页: index.md
-  - 学习与操作: learning-workflow.md
-  - 自动续学与独立使用: automatic-progress.md
-  - 网站发布: publishing.md
-  - 路线:
-      - 总览: roadmap.md
+  - 课程:
+      - 课程总览: course-index.md
+      - 阶段 0 · 工具链:
+          - 工具链与 Git: courses/toolchain-and-git/README.md
+      - 阶段 1 · 编程与数学:
+          - C 程序设计: courses/c-programming/README.md
+          - 离散数学: courses/discrete-mathematics/README.md
+          - 游戏线性代数: courses/linear-algebra-for-games/README.md
+          - 微积分与概率: courses/calculus-and-probability/README.md
+      - 阶段 2 · 算法与程序设计:
+          - 数据结构: courses/data-structures/README.md
+          - 高级算法: courses/advanced-data-structures-algorithms/README.md
+          - 游戏 OOP: courses/object-oriented-programming/README.md
+      - 阶段 3 · 系统与工程:
+          - 组成与体系结构: courses/computer-organization/README.md
+          - 操作系统: courses/operating-systems/README.md
+          - 游戏软件工程: courses/software-engineering/README.md
+      - 阶段 4 · 数据与网络:
+          - 游戏数据库: courses/database-systems/README.md
+          - 多人游戏网络: courses/computer-networks/README.md
+      - 阶段 5 · 图形与媒体:
+          - 计算机图形学: courses/computer-graphics/README.md
+          - 多媒体与资源管线: courses/multimedia-and-asset-pipeline/README.md
+      - 阶段 6 · 语言、AI 与引擎:
+          - 编译原理与 DSL: courses/compiler-principles-and-dsl/README.md
+          - 编程语言与脚本: courses/programming-language-principles/README.md
+          - 游戏 AI: courses/game-ai/README.md
+          - 游戏引擎架构: courses/game-engine-architecture/README.md
+      - 阶段 7 · Unity 肉鸽:
+          - Unity 肉鸽生产: courses/unity-roguelite-production/README.md
+      - 阶段 8 · UE、在线与优化:
+          - UE 玩法编程: courses/unreal-gameplay-programming/README.md
+          - 在线服务: courses/game-networking-and-services/README.md
+          - 优化、调试与工具: courses/optimization-debugging-and-tools/README.md
+      - 阶段 9 · 发行:
+          - 发行与毕业项目: courses/shipping-and-capstone/README.md
+  - 路线与实践:
+      - 路线总览: roadmap.md
       - 培养方案映射: roadmap/curriculum-mapping.md
-      - 实践体系: roadmap/practice-system.md
-      - 单周闭环: roadmap/weekly-loop.md
-      - 当前技术与前沿拓展: roadmap/modern-expansions.md
-      - 课程索引: roadmap/course-index.md
-  - 生成标准:
-      - 标准中心: standards/README.md
-      - 知识集规范: standards/knowledge-generation-spec.md
-      - 执行流程: standards/generation-workflow.md
-      - 目录契约: standards/course-folder-template.md
+      - 实践主线: roadmap/practice-system.md
+      - 当前技术与拓展: roadmap/modern-expansions.md
+  - 学习指南:
+      - 如何学习、做题与实践: learning-workflow.md
+      - 自动续学与独立使用: automatic-progress.md
+      - 单次学习闭环: roadmap/weekly-loop.md
+  - 维护与规范:
+      - 网站发布: publishing.md
+      - 规范入口: standards/README.md
+      - 内容质量规范: standards/knowledge-generation-spec.md
+      - 课程生成流程: standards/generation-workflow.md
+      - 文件职责与可变结构: standards/course-folder-template.md
       - 研究与引用: standards/research-and-citation.md
       - 实践设计: standards/practice-design.md
       - 命名与架构: standards/naming-and-architecture.md
       - 质量门禁: standards/quality-gates.md
-      - AI提示模板: standards/ai-course-prompt.md
-  - 课程知识集:
-      - 课程总表: course-index.md
+      - AI 课程提示: standards/ai-course-prompt.md

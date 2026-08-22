@@ -1,43 +1,18 @@
 # 性能优化、调试与游戏工具开发
 
-- 课程 ID：`optimization-debugging-and-tools`
-- 来源：增补/软件工程拓展
-- 目标深度：**D3**
-- 所属阶段：阶段 8
-- 挂接实践：`P3/P5`
-- 状态：`scaffolded`（仅完成目录骨架，尚未生成完整知识正文）
+<div class="course-meta">
+<span class="course-badge">阶段 8</span>
+<span class="course-badge">深度 D3</span>
+<span class="course-badge">实践 P3/P5</span>
+<span class="course-badge">准备中</span>
+</div>
 
-## 这门课要解决的游戏开发问题
+建立测量优先的 CPU/GPU/内存诊断方法，并把重复劳动产品化为工具。
 
-> 待按 `standards/generation-workflow.md` 研究后填写。不要先写泛泛的课程简介。
+## 可验证出口
 
-## 出口能力
+用证据修复一个性能或稳定性问题，并留下可复用的诊断工具。
 
-- 待定义：能够解释核心机制、边界和取舍。
-- 待定义：能够完成最小可运行实现或可复现实验。
-- 待定义：能够把知识映射到 Unity/UE 或无引擎游戏工具。
-- 待定义：能够定位一个故意制造的失败案例。
-- 待定义：能够用复现命令和测试证明实现正确，并解释关键取舍。
+## 生成前的设计要求
 
-## 章节导航
-
-- [课程地图](lessons/00-course-map.md)
-- [实验入口](labs/README.md)
-- [实践提示与参考解法](labs/solutions.md)
-- [题目](assessments/questions.md)
-- [答案与解析](assessments/answers.md)
-- [评分标准](assessments/rubric.md)
-- [术语表](notes/glossary.md)
-- 阅读位置由网站在当前浏览器自动保存，无需手工维护进度文件。
-- [研究笔记](references/research-notes.md)
-
-## 环境与版本
-
-待研究后填写。引擎课程必须说明引擎版本、包/插件版本、编译器、平台和可替代方案。
-
-## 完成标准
-
-本课程的题目、折叠答案、解析和实验说明均为公开内容；个人无需维护作答或进度文档。
-
-
-以 `standards/quality-gates.md` 为准；本课程完成前不得只以“正文写完”作为完成条件。
+先研究可靠来源并完成[课程地图](lessons/00-course-map.md)。章节结构应由本课程的难点决定；不要先创建成套空页面，也不要把统一模板当成正文目录。

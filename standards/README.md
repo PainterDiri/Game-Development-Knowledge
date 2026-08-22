@@ -1,14 +1,19 @@
-# 知识集标准中心
+# 维护与生成规范
 
-本目录是后续每次生成课程知识集时必须遵守的“课程生产线”。生成前先读：
+这里服务于课程维护者和 AI 生成流程，普通学习者不需要按顺序阅读。
 
-1. `knowledge-generation-spec.md`：什么算一份合格的知识集；
-2. `generation-workflow.md`：研究、规划、生成、实践、校验、Git 的执行顺序；
-3. `course-folder-template.md`：目录和文件契约；
-4. `research-and-citation.md`：搜索、来源、版本与引用规则；
-5. `practice-design.md`：如何在时间有限时设计少而精的实践；
-6. `naming-and-architecture.md`：游戏项目命名、模块边界、数据驱动和依赖方向；
-7. `quality-gates.md`：课程生成后的质量门禁；
-8. `ai-course-prompt.md`：可直接交给 AI 的课程生成提示模板。
+## 最常用的四份文件
 
-任何课程知识集如果违反这些标准，应先修正再标记为 `completed`。
+1. [内容质量规范](knowledge-generation-spec.md)：固定质量证据，但不固定章节模板；
+2. [课程生成流程](generation-workflow.md)：研究、设计、生成、验证和发布；
+3. [实践设计](practice-design.md)：如何保持少而精；
+4. [质量门禁](quality-gates.md)：什么情况下可以标记为完成。
+
+## 按需查阅
+
+- [文件职责与可变结构](course-folder-template.md)
+- [研究与引用](research-and-citation.md)
+- [命名与架构](naming-and-architecture.md)
+- [AI 课程提示](ai-course-prompt.md)
+
+规范是为了阻止错误、注水和不可复现内容，不应成为学习网站的主角，也不应迫使所有课程使用相同章节结构。
