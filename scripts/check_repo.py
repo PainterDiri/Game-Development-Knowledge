@@ -37,6 +37,7 @@ COMPLETION_MARKERS = ("待课程生成时填写", "待研究后填写", "待设�
 VALID_STATUSES = {"planned", "scaffolded", "in-progress", "completed"}
 VALID_PRACTICE_TRACKS = {"supporting-lab", "shared-unity", "online-sidecar", "ue-migration", "shipping"}
 VALID_INTEGRATION_MODES = {"direct", "adapter", "export", "standalone"}
+VALID_CURRICULUM_ROLES = {"core", "supporting", "specialization"}
 QUALITY_SIGNALS = {
     "mechanism": ("机制", "不变量", "定义与边界"),
     "example": ("示例", "```", "命令"),
@@ -181,13 +182,19 @@ def main() -> int:
         statuses[status] += 1
         if status not in VALID_STATUSES:
             errors.append(f"{slug}: invalid status {status!r}")
-        for key in ("title", "shortTitle", "summary", "outcome", "depth", "phase", "practice", "practiceTrack", "integrationMode", "projectSlice"):
+        for key in ("title", "shortTitle", "summary", "outcome", "depth", "phase", "practice", "practiceTrack", "integrationMode", "projectSlice", "curriculumRole", "capstoneRequired", "deliveryPriority"):
             if key not in course or course[key] in (None, ""):
                 errors.append(f"{slug}: missing metadata field {key}")
         if course.get("practiceTrack") not in VALID_PRACTICE_TRACKS:
             errors.append(f"{slug}: invalid practiceTrack {course.get('practiceTrack')!r}")
         if course.get("integrationMode") not in VALID_INTEGRATION_MODES:
             errors.append(f"{slug}: invalid integrationMode {course.get('integrationMode')!r}")
+        if course.get("curriculumRole") not in VALID_CURRICULUM_ROLES:
+            errors.append(f"{slug}: invalid curriculumRole {course.get('curriculumRole')!r}")
+        if not isinstance(course.get("capstoneRequired"), bool):
+            errors.append(f"{slug}: capstoneRequired must be boolean")
+        if course.get("deliveryPriority") not in {1, 2, 3}:
+            errors.append(f"{slug}: deliveryPriority must be 1, 2, or 3")
 
         base = ROOT / "knowledge-sets" / slug
         if not base.exists():
@@ -235,7 +242,9 @@ def main() -> int:
         return 1
 
     status_summary = ", ".join(f"{key}={value}" for key, value in sorted(statuses.items()))
-    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); structure, depth signals, links, privacy, UI assets and state rules valid")
+    published = statuses.get("completed", 0)
+    scaffolded = statuses.get("planned", 0) + statuses.get("scaffolded", 0)
+    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); published={published}, not-yet-published={scaffolded}; structural gates, links, privacy, UI assets and state rules valid")
     return 0
 
 

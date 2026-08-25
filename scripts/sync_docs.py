@@ -38,6 +38,11 @@ STATUS_LABELS = {
     "in-progress": "建设中",
     "completed": "可学习",
 }
+ROLE_LABELS = {
+    "core": "核心主线",
+    "supporting": "支撑课程",
+    "specialization": "方向拓展",
+}
 STATUS_CLASSES = {
     "planned": "",
     "scaffolded": "",
@@ -82,6 +87,7 @@ def course_landing(course: dict) -> str:
 <span class="course-badge">阶段 {course['phase']} · {PHASE_NAMES.get(course['phase'], '')}</span>
 <span class="course-badge">深度 {course['depth']}</span>
 <span class="course-badge">实践 {course['practice']}</span>
+<span class="course-badge">{ROLE_LABELS.get(course.get("curriculumRole"), course.get("curriculumRole", "未分层"))}</span>
 <span class="course-badge {css_class}">{label}</span>
 </div>
 
@@ -98,6 +104,8 @@ def course_landing(course: dict) -> str:
 - **轨道**：`{course['practiceTrack']}`
 - **集成方式**：`{course['integrationMode']}`
 - **主项目切片**：{course['projectSlice']}
+- **毕业项目关系**：{"必修" if course.get("capstoneRequired") else "可延后；不阻塞基础纵切片"}
+- **交付优先级**：P{course.get("deliveryPriority", "?")}（P1 先做，P3 可在主线稳定后再做）
 
 ## 学完后的可验证出口
 
@@ -231,13 +239,15 @@ def build_course_catalog(courses: list[dict]) -> str:
             lines.extend([
                 f"-   :material-book-open-page-variant-outline: **[{course['shortTitle']}](courses/{course['slug']}/README.md)**",
                 "",
-                f"    <span class=\"course-badge\">{course['depth']}</span> <span class=\"course-badge\">{html.escape(str(course['practice']))}</span> <span class=\"course-badge {css_class}\">{label}</span>",
+                f"    <span class=\"course-badge\">{course['depth']}</span> <span class=\"course-badge\">{html.escape(str(course['practice']))}</span> <span class=\"course-badge\">{html.escape(ROLE_LABELS.get(course.get('curriculumRole'), course.get('curriculumRole', '未分层')))}</span> <span class=\"course-badge {css_class}\">{label}</span>",
                 "",
                 f"    {course['summary']}",
                 "",
                 f"    <span class=\"course-outcome\"><strong>出口：</strong>{course['outcome']}</span>",
                 "",
                 f"    <span class=\"course-outcome\"><strong>接缝：</strong>`{course['practiceTrack']}` · `{course['integrationMode']}` · {html.escape(course['projectSlice'])}</span>",
+                "",
+                f"    <span class=\"course-outcome\"><strong>路线：</strong>{'毕业项目必修' if course.get('capstoneRequired') else ROLE_LABELS.get(course.get('curriculumRole'), '可延后') + '，不阻塞基础纵切片'}</span>",
                 "",
             ])
         lines.extend(["</div>", ""])
@@ -250,10 +260,10 @@ def build_metadata_index(courses: list[dict]) -> str:
         "",
         "本页供维护流程核对顺序、深度、阶段、实践接口和公开内容状态。普通学习请使用网站的课程总览。",
         "",
-        "| 顺序 | 课程 | 深度 | 阶段 | 实践 | 接缝轨道 | 集成方式 | 主项目切片 | 状态 |",
-        "|---:|---|---:|---:|---|---|---|---|---|",
+        "| 顺序 | 课程 | 深度 | 阶段 | 路线角色 | 毕业必修 | 实践 | 接缝轨道 | 集成方式 | 主项目切片 | 状态 |",
+        "|---:|---|---:|---:|---|---|---|---|---|---|---|",
         *[
-            f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {c['practice']} | `{c['practiceTrack']}` | `{c['integrationMode']}` | {c['projectSlice']} | `{c['status']}` |"
+            f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {ROLE_LABELS.get(c.get('curriculumRole'), c.get('curriculumRole', '未分层'))} | {'是' if c.get('capstoneRequired') else '否'} | {c['practice']} | `{c['practiceTrack']}` | `{c['integrationMode']}` | {c['projectSlice']} | `{c['status']}` |"
             for c in courses
         ],
         "",

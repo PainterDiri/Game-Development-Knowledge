@@ -93,8 +93,36 @@ nav:
               - 主实践: courses/toolchain-and-git/practice.md
               - 主项目接缝: courses/toolchain-and-git/integration-contract.md
               - 练习题: courses/toolchain-and-git/assessments.md
+              - 参考书目: courses/toolchain-and-git/references/bibliography.md
+              - 研究笔记: courses/toolchain-and-git/references/research-notes.md
       - 阶段 1 · 编程与数学:
-          - C 程序设计: courses/c-programming/README.md
+          - C 程序设计:
+              - 课程与地图: courses/c-programming/README.md
+              - 00 · 课程地图: courses/c-programming/lessons/00-course-map.md
+              - 1 · 从源文件到进程: courses/c-programming/lessons/01-running-c-program.md
+              - 2 · 对象、类型与状态: courses/c-programming/lessons/02-objects-types-and-state.md
+              - 3 · 表达式、转换与数值边界: courses/c-programming/lessons/03-expressions-conversions-and-numeric-bounds.md
+              - 4 · 分支、循环与不变量: courses/c-programming/lessons/04-control-flow-and-loop-invariants.md
+              - 5 · 函数、作用域与调用栈: courses/c-programming/lessons/05-functions-scope-and-call-stack.md
+              - 6 · 头文件、链接与模块: courses/c-programming/lessons/06-headers-linkage-and-modules.md
+              - 7 · 数组与连续内存: courses/c-programming/lessons/07-arrays-and-contiguous-memory.md
+              - 8 · 字符串、字节与缓冲区: courses/c-programming/lessons/08-strings-bytes-and-buffer-boundaries.md
+              - 9 · 指针、const 与别名: courses/c-programming/lessons/09-pointers-const-and-aliasing.md
+              - 10 · 指针参数与区间 API: courses/c-programming/lessons/10-pointer-parameters-and-range-apis.md
+              - 11 · 动态内存与所有权: courses/c-programming/lessons/11-dynamic-memory-and-ownership.md
+              - 12 · 结构体、布局与对齐: courses/c-programming/lessons/12-struct-layout-alignment-and-serialization.md
+              - 13 · 枚举、联合与位标志: courses/c-programming/lessons/13-enums-unions-and-bitflags.md
+              - 14 · 文件 I/O 与错误处理: courses/c-programming/lessons/14-file-io-and-error-handling.md
+              - 15 · UB、Sanitizer 与调试: courses/c-programming/lessons/15-undefined-behavior-sanitizers-and-debugging.md
+              - 16 · 测试、不变量与基准: courses/c-programming/lessons/16-tests-invariants-and-benchmarks.md
+              - 17 · 运行时组件库: courses/c-programming/lessons/17-runtime-component-library.md
+              - 18 · C ABI 与引擎适配: courses/c-programming/lessons/18-c-abi-and-engine-adapters.md
+              - 主实践: courses/c-programming/practice.md
+              - 主项目接缝: courses/c-programming/integration-contract.md
+              - 练习题: courses/c-programming/assessments.md
+              - 参考书目: courses/c-programming/references/bibliography.md
+              - 研究笔记: courses/c-programming/references/research-notes.md
+              - 参考代码: courses/c-programming/code/runtime-kit/README.md
           - 离散数学: courses/discrete-mathematics/README.md
           - 游戏线性代数: courses/linear-algebra-for-games/README.md
           - 微积分与概率: courses/calculus-and-probability/README.md
@@ -130,6 +158,7 @@ nav:
           - 发行与毕业项目: courses/shipping-and-capstone/README.md
   - 路线与实践:
       - 路线总览: roadmap.md
+      - 知识集现状审计: roadmap/knowledge-set-audit.md
       - 实践代码下载: downloads/README.md
       - 培养方案映射: roadmap/curriculum-mapping.md
       - 实践主线: roadmap/practice-system.md
