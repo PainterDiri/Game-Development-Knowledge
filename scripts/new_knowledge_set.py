@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a minimal course skeleton without imposing a chapter template."""
+"""Create a minimal course skeleton with README as the sole course-map entry."""
 from __future__ import annotations
 
 import argparse
@@ -109,7 +109,7 @@ def main() -> int:
 - `integrationMode`：`{course.get('integrationMode', '待定义')}`
 - `projectSlice`：{course.get('projectSlice', '待定义')}
 
-下一步：先在 `references/research-notes.md` 记录来源和不确定点，再完成课程地图，然后逐页编写正文、实践与评估。
+下一步：先在 `references/research-notes.md` 记录来源和不确定点，再把 README 的课程地图补全，然后逐页编写正文、实践与评估；不要创建 `lessons/00-course-map.md`。
 """)
     write_new(base / "references/research-notes.md", "# 研究笔记\n\n按问题记录来源、版本、访问日期、关键事实、用途、限制和冲突。\n")
     if not existing:

@@ -98,7 +98,6 @@ nav:
       - 阶段 1 · 编程与数学:
           - C 程序设计:
               - 课程与地图: courses/c-programming/README.md
-              - 00 · 课程地图: courses/c-programming/lessons/00-course-map.md
               - 1 · 从源文件到进程: courses/c-programming/lessons/01-running-c-program.md
               - 2 · 对象、类型与状态: courses/c-programming/lessons/02-objects-types-and-state.md
               - 3 · 表达式、转换与数值边界: courses/c-programming/lessons/03-expressions-conversions-and-numeric-bounds.md

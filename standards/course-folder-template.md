@@ -16,7 +16,7 @@ knowledge-sets/<slug>/
 └── practice-bundle.json         # 有公开代码/fixture 时创建
 ```
 
-不要预填大量“待填写”页。研究和课程图完成后，按本课的实际难点创建正文。旧版 `lessons/00-course-map.md` 可以继续维护，但新课优先把地图放入 README，避免学习者先进入一个只有计划没有教学的页面。
+不要预填大量“待填写”页。研究和课程图完成后，按本课的实际难点创建正文。`README.md` 是唯一的课程首页与课程地图入口；新课不得创建 `lessons/00-course-map.md`。仓库中的同名文件仅作为历史 scaffold 兼容物保留，不能加入公开导航；课程转为 `completed` 前必须删除它，除非它承担与 README 不重复的独立正文职责。
 
 ## 课程首页最低内容
 

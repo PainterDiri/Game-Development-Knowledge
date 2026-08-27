@@ -20,8 +20,8 @@ REQUIRED = [
     "standards/naming-and-architecture.md", "standards/quality-gates.md",
     "standards/ai-course-prompt.md", "knowledge-sets/README.md",
 ]
-# Legacy map/research files remain accepted for existing scaffolds. New courses may
-# use README.md as the combined course landing page and course map.
+# Legacy map files remain accepted only for historical scaffolds. README.md is the
+# sole course landing page and course map for new and completed courses.
 SCAFFOLD_FILES = ["README.md", "references/research-notes.md"]
 FORBIDDEN_PUBLIC_STATE = {
     "progress.md", "exercise-log.md", "mistakes.md", "decision-log.md", "workspace"
@@ -131,7 +131,10 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
             errors.append(f"{slug}: invalid practice-bundle.json: {exc}")
 
     lessons_dir = base / "lessons"
+    legacy_map = lessons_dir / "00-course-map.md"
     lesson_files = [p for p in lessons_dir.glob("*.md") if p.name != "00-course-map.md"] if lessons_dir.exists() else []
+    if status == "completed" and legacy_map.exists():
+        errors.append(f"{slug}: completed course must keep README as the sole course map; remove lessons/00-course-map.md")
     if status == "completed":
         if not lesson_files:
             errors.append(f"{slug}: completed course has no lesson beyond the legacy course map")
