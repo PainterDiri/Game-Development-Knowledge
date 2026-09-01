@@ -9,11 +9,6 @@
       "path": "code/runtime-kit",
       "role": "reference-code",
       "description": "固定容量、确定性 seed、错误码和 Sanitizer 测试的 C17 运行时参考基线"
-    },
-    {
-      "path": "integration-contract.md",
-      "role": "integration-contract",
-      "description": "导出到 Unity RogueSlice 或 UE 模块的 C ABI、所有权和回滚契约"
     }
   ],
   "exclude": [

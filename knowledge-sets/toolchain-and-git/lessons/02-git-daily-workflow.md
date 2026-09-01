@@ -189,3 +189,34 @@ git status
 ```
 
 完成后你应能解释每条命令读取或改变了哪个状态。第 3 章会加入分支、远端、fetch/pull/push，解释多人同时工作时这些本地状态如何同步。
+
+
+## 本章练习
+
+### T02-Q1：只提交一个目的
+
+工作区同时有规则修复和调试日志，只提交规则修复。
+
+<details><summary>最小提示</summary>
+
+先看 `git diff`，再用 `git add -p`。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+`git diff` 是工作区相对暂存区，`git add -p` 逐块复制到暂存区，`git diff --cached` 是下一次提交实际内容，`git commit` 只创建本地节点，不上传。若误暂存可 `git restore --staged path` 保留工作区。验证 `git show --name-only HEAD`。游戏映射：把规则、日志和文档拆开，便于 review/回滚。
+</details>
+
+### T02-Q2：把证据写出来
+
+请为本章主题列出一个最小可执行验证，并说明预期结果和失败后的下一步。
+
+<details><summary>最小提示</summary>
+
+不要只写“运行一下”；写出输入、命令、观察对象和判定条件。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+合格验证应固定输入并记录命令、退出码、变更的 Git 状态或构建产物；预期结果必须可观察，失败时能缩小到一个阶段或不变量。若结果受时间、网络、缓存或未提交工作影响，应先隔离这些变量。常见错误是只看屏幕上的成功文字，不检查退出码、diff、artifact 或清理后重建。游戏映射：工程质量来自可重复证据，而不是一次“看起来能跑”。
+</details>

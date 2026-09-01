@@ -1,108 +1,160 @@
-# 主实践：固定容量房间/波次运行时组件库
+# 主实践：C17 命令行房间战斗模拟器
 
-## 目标与边界
+## 目标
 
-你要实现一个不依赖 Unity/UE 的 C17 组件，模拟肉鸽房间运行时中的一小段规则：给定 `seed` 和波次数量，生成固定容量的敌人快照；调用者可以读取快照、计算诊断摘要，并在容量不足或参数非法时得到明确错误。
+实现一个可以用文本命令驱动的小型战斗运行时：显式 seed 生成敌人波次，玩家攻击指定敌人，存活敌人执行反击，程序打印状态和 checksum。验收重点不是美术，而是 C 的状态、边界、生命周期、错误和证据。
 
-这不是“做一个游戏”，也不是追求最短代码。验收关注：对象生命周期、数组边界、所有权、失败原子性、确定性和可观测证据。
+## Git 隔离：先复制，绝不直接改教材代码
 
-## 最小版本
-
-```text
-c-programming-practice/
-├── include/rg_runtime.h
-├── rg_runtime.c
-├── test_runtime.c
-└── Makefile
-```
-
-只需要 C17 编译器；不得引入第三方库。可以从 `code/runtime-kit/` 复制参考基线到自己的 `.practice/c-programming/`，但先阅读题面再对照。
-
-## 分阶段题面
-
-### 阶段 A：值与数据布局
-
-定义 `RgVec2`、`RgEnemy`、`RgRuntime`。至少包含位置、生命值、旗标、有效元素数、容量和 RNG 状态。写出每个字段的单位、允许范围、所有者和生命周期；不要把动态数组指针留在结构体里而不说明释放者。
-
-### 阶段 B：确定性和状态转换
-
-实现 `rg_runtime_init(runtime, seed)` 和 `rg_runtime_spawn_wave(runtime, count)`。同一个 seed 和同一调用序列必须产生相同快照；不同 seed 的输出应在测试中有可观察差异。容量检查必须先于任何写入，失败后 `enemy_count`、已有敌人和 RNG 状态都不应改变。
-
-### 阶段 C：读取与错误路径
-
-实现只读查询 API，例如 `rg_runtime_get_enemy(runtime, index, out_enemy)`。对 `NULL`、空运行时、越界索引、容量不足给出错误码；失败时输出参数不能留下“半个新结果”。
-
-### 阶段 D：证据和工程边界
-
-写至少 5 个测试：正常生成、空波次、容量边界、失败原子性、同 seed 重现、不同 seed 差异、越界查询中选 5 个以上。为至少一个故意 bug 保留 Sanitizer 复现命令和修复后的回归测试。
-
-## 最小提示
-
-<details><summary>提示 1：先写状态不变量</summary>
-
-核心不变量可以是 `0 <= enemy_count <= RG_RUNTIME_MAX_ENEMIES`。所有写入位置都应是 `enemies[enemy_count + i]` 且先证明 `enemy_count + count <= capacity`。失败路径不要先增加 `enemy_count` 再回滚。
-</details>
-
-<details><summary>提示 2：不要用全局随机状态</summary>
-
-把 RNG 状态放在 `RgRuntime` 中，`init` 设置 seed，生成函数只通过 `runtime` 消费状态。这样两个实例可以并行测试，改变 `runId` 也不会改变规则结果。
-</details>
-
-<details><summary>提示 3：查询 API 的返回值和输出参数分工</summary>
-
-返回值表示成功/哪一种失败；`out_enemy` 只在成功时写入。调用者拥有输出对象，不需要释放库内部内存。
-</details>
-
-## 参考路线
-
-1. 先让 `make test` 编译一个空的 `main`，确认工具链而不是代码逻辑出了问题；
-2. 先实现 `init`、计数查询和一个固定敌人，再加入 RNG；
-3. 用固定 seed 打印一份 checksum，随后把打印改为断言；
-4. 用容量恰好填满、再请求 1 个的测试证明失败原子性；
-5. 加入 `NULL`/越界测试和 Sanitizer；
-6. 最后才考虑导出符号、结构体布局和引擎适配，不要先写 Unity/UE 代码。
-
-## 验收方法
-
-在干净目录运行：
+`knowledge-sets/c-programming/code/runtime-kit/` 是公开、已跟踪的只读参考。直接修改它会出现在主仓库 `git status` 中，未来可能被误提交。请在仓库根目录执行：
 
 ```bash
-make clean test
-make asan
+python3 scripts/init_practice.py --course c-programming
+git check-ignore -v .practice/c-programming
+git status --short --untracked-files=all
+cd .practice/c-programming/runtime-kit
 ```
 
-通过标准：
+预期：`git check-ignore` 显示 `.gitignore` 中的 `.practice/` 规则；主仓库 `git status` 不列出你的练习文件。不要使用 `git add -f .practice/...` 绕过保护；不要在主仓库根目录运行 `git clean -fdx`，它会删除个人实践。重要代码请另做仓库外备份。
 
-- 编译无 `-Wall -Wextra -Wconversion -Wshadow -pedantic` 警告；
-- 普通测试输出明确的通过信息；
-- Sanitizer 运行无报告；
-- 相同 seed 的 checksum/快照一致，不同 seed 有差异；
-- 容量不足、参数为空、索引越界都走可判断的错误路径；
-- 失败调用不修改已有状态；
-- README 写清运行命令、字段单位、所有权和已知限制；
-- `git diff --check` 通过，代码没有机器私有路径、缓存或密钥。
+如果你已经误改 `knowledge-sets/.../code/`：先用 `git diff -- <path>` 检查并把文件复制到 `.practice/`；确认副本可用后，才考虑用 `git restore <path>` 恢复教材文件。`.gitignore` 不会保护已经跟踪的文件。
 
-## 常见失败与诊断
+## 环境与最小版本
 
-| 现象 | 可能原因 | 先查什么 |
+- C17 编译器：Clang 或 GCC；
+- Make；
+- 不依赖第三方库；
+- 最小文件：`include/rg_runtime.h`、`rg_runtime.c`、`arena.c`、`test_runtime.c`、`Makefile`。
+
+先验证参考基线：
+
+```bash
+make clean all
+make test
+make asan
+printf 'wave 2\nstatus\nhit 0 99\nenemy\nstatus\nquit\n' | ./arena --seed 42
+```
+
+## 分阶段指导
+
+### 阶段 1：写出状态和不变量
+
+用 `RgRuntime` 拥有玩家生命、波次编号、RNG 状态、固定容量敌人数组和有效计数。用 `RgEnemy` 表示 ID、位置、生命、攻击与标志。先在纸上写：
+
+```text
+0 <= enemy_count <= RG_RUNTIME_MAX_ENEMIES
+有效敌人在 enemies[0, enemy_count)
+health == 0 的敌人不得参与敌人阶段
+失败调用不得修改既有状态或输出参数
+同 seed + 同命令序列 => 同 checksum
+```
+
+关键代码：
+
+```c
+typedef struct {
+    RgEnemy enemies[RG_RUNTIME_MAX_ENEMIES];
+    size_t enemy_count;
+    int player_health;
+    uint32_t wave_index;
+    uint32_t rng_state;
+} RgRuntime;
+```
+
+数组由运行时对象直接拥有，因此无需逐个 `free`；容量上限是明确设计，不是假装无限。
+
+### 阶段 2：实现确定性生成和失败原子性
+
+`rg_runtime_spawn_wave` 先检查剩余容量，再生成。参考实现把 RNG 状态复制到局部变量，全部成功后才提交回运行时；这样未来若加入更多可能失败的校验，拒绝请求不会偷偷消耗随机数。
+
+至少测试：0 个、1 个、恰好填满、超过容量、相同 seed、不同 seed。不要用当前时间作为规则 seed；可以在 CLI 入口生成随机 seed，但必须打印实际值。
+
+### 阶段 3：实现攻击、位标志和输出参数
+
+`rg_runtime_hit_enemy(runtime, index, damage, &defeated)` 用返回值表示调用是否成功，用 `out_defeated` 返回业务结果。检查顺序应是空指针/负伤害 → 索引 → 修改敌人 → 最后写输出。失败时输出保持调用前的值。
+
+死亡使用 `RG_ENEMY_ALIVE` 位标志；精英用另一位。练习组合、检查与清除：
+
+```c
+enemy->flags &= ~RG_ENEMY_ALIVE;
+if ((enemy->flags & RG_ENEMY_ELITE) != 0u) { /* ... */ }
+```
+
+### 阶段 4：实现 CLI 输入边界
+
+`fgets` 读取整行，`sscanf` 或 `strtol/strtoul` 解析。至少支持：
+
+```text
+wave N
+hit INDEX DAMAGE
+enemy
+status
+quit
+```
+
+为过长行、负数、非法 seed、越界索引和未知命令给出明确消息。进阶版应优先使用 `strtol` 系列并检查 `errno`、结束指针和范围，不要依赖 `atoi` 的静默失败。
+
+### 阶段 5：加入存档（拓展，但建议完成）
+
+设计一个文本格式：
+
+```text
+RGSAVE 1
+seed_state 123
+wave 2
+player_health 17
+enemy_count 2
+...
+```
+
+读取时先解析到临时 `RgRuntime candidate`，完整校验后再赋给真实运行时；损坏、截断或未知版本时保持原状态。这把“失败原子性”从函数扩展到存档加载。
+
+### 阶段 6：测试与诊断
+
+测试至少覆盖：
+
+- spawn 成功和容量失败原子性；
+- 相同 seed/命令序列 checksum 一致；
+- 越界、负伤害和空指针；
+- 已死亡敌人不攻击；
+- 玩家生命不低于 0；
+- 损坏存档拒绝且原状态不变（若实现存档）；
+- Sanitizer 无报告。
+
+故意把一个循环条件改成 `i <= enemy_count`，运行 `make asan` 观察越界报告；修复后保留一个能覆盖最后元素边界的回归测试。
+
+## 验收
+
+```bash
+make clean all
+make test
+make asan
+printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-a.txt
+printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-b.txt
+diff -u run-a.txt run-b.txt
+git check-ignore -v ../../.practice/c-programming 2>/dev/null || true
+```
+
+从仓库根目录再运行：
+
+```bash
+git status --short --untracked-files=all
+```
+
+通过标准：编译无课程启用的警告；测试和 Sanitizer 通过；相同输入无 diff；非法输入可诊断；错误路径不半更新；主仓库状态不含个人练习。
+
+## 常见失败
+
+| 现象 | 原因 | 诊断与修复 |
 |---|---|---|
-| `make` 找不到头文件 | `-Iinclude` 缺失或路径错误 | 编译命令和工作目录 |
-| 同 seed 结果不同 | 使用 `time()`/全局 RNG 或调用次数不同 | seed 所有者和 RNG 消费点 |
-| 失败后已有敌人改变 | 先写入再做容量检查 | 失败原子性测试 |
-| ASan 报 heap/stack overflow | `<=` 边界、错误容量或 `sizeof` 误用 | `[0, count)` 和函数参数退化 |
-| 退出时崩溃 | 重复释放或把栈对象当堆对象释放 | 所有权表 |
-| Unity/UE 接入链接失败 | C++ 名字改编、调用约定或结构体不一致 | `extern "C"`、ABI 和构建目标 |
+| 第 33 个敌人写坏内存 | 写入前没证明剩余容量 | 用减法形式检查 `count > capacity - used`，ASan 验证 |
+| 同 seed 结果变化 | 全局 RNG、隐式时间或失败调用消耗随机数 | RNG 放入运行时，失败前用局部副本 |
+| `hit` 失败却改了 `defeated` | 过早写输出参数 | 局部计算，成功末尾再写 |
+| 命令 `wave -1` 变成巨大数 | 有符号/无符号转换或解析未检查 | 使用 `strtol`，检查范围后转 `size_t` |
+| 死亡敌人仍攻击 | 健康和标志不变量不同步 | 只设一个权威规则并写测试 |
+| 个人代码出现在 Git 状态 | 修改了已跟踪教材文件或强制添加 `.practice` | 复制差异到 `.practice`，恢复教材文件，撤销强制 staged 项 |
+| `.practice` 突然消失 | 在根目录执行了 `git clean -fdx` | 从备份恢复；以后只在明确目录清理 |
 
-## 两个微实验
+## 可选拓展
 
-### A：生命周期诊断（15–30 分钟）
-
-分别制造“返回局部数组地址”和“释放后读取”的最小程序；用 `-fsanitize=address,undefined -g` 运行，记录报告中的源行、访问类型和修复方案。不要把“加一个 `printf` 后不崩”当修复。
-
-### B：布局与标志测量（20–40 分钟）
-
-调整 `RgEnemy` 字段顺序，打印 `sizeof`/`offsetof`；再用位标志表示三种伤害属性，测试组合、检查和清除。写一段说明：为什么内存更小不等于协议更稳定，为什么序列化需要显式版本。
-
-## 主项目接缝
-
-完成独立验收后，按 [integration-contract.md](integration-contract.md) 导出 `create/init → spawn → snapshot → destroy` 的最小 API。Unity/UE 适配层只能消费快照和错误码，不能把场景对象指针塞进 C 核心；任何失败都可以回滚到没有 C 组件的主项目版本。
+加入物品、伤害类型、回放命令日志、版本化存档或动态敌人容器。每次拓展先写状态所有者、失效规则和测试，再写代码；不要把所有功能塞进 `main` 的无限 `if` 链。

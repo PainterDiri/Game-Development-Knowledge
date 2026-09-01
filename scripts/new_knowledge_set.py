@@ -48,13 +48,10 @@ def main() -> int:
         "source": args.source,
         "depth": args.depth,
         "phase": args.phase,
-        "practice": args.practice,
         "status": "scaffolded",
         "summary": args.summary,
         "outcome": args.outcome,
-        "practiceTrack": "supporting-lab",
-        "integrationMode": "standalone",
-        "projectSlice": "待研究后定义",
+        "practiceProject": "待研究后定义的课程主实践",
         "prerequisites": [],
         "teachingArc": "待研究后按可观察任务、最小术语、机制、实验、失败与综合出口设计",
         "expectedLessonScale": "完成概念依赖图后确定；D3 课程通常需要 10–20 个连续知识单元",
@@ -64,7 +61,7 @@ def main() -> int:
     if base.exists() and any(base.rglob("*")):
         raise SystemExit(f"{base.relative_to(ROOT)} already exists; refusing to overwrite it")
 
-    (base / "references").mkdir(parents=True, exist_ok=True)
+    base.mkdir(parents=True, exist_ok=True)
     prerequisites = course.get("prerequisites", [])
     prereq_text = "、".join(f"`{item}`" for item in prerequisites) or "无硬性前置；仍需设计零基础诊断"
     write_new(base / "README.md", f"""# {title}
@@ -72,7 +69,7 @@ def main() -> int:
 - 课程 ID：`{slug}`
 - 目标深度：**{course['depth']}**
 - 所属阶段：{course['phase']}
-- 挂接实践：`{course['practice']}`
+- 主实践：{course.get('practiceProject', '待研究后定义')}
 - 状态：`scaffolded`
 
 {course['summary']}
@@ -103,15 +100,13 @@ def main() -> int:
 
 {course['outcome']}
 
-## 实践接缝
+## 本课程主实践
 
-- `practiceTrack`：`{course.get('practiceTrack', '待定义')}`
-- `integrationMode`：`{course.get('integrationMode', '待定义')}`
-- `projectSlice`：{course.get('projectSlice', '待定义')}
+- 主实践：{course.get('practiceProject', '待定义')}
+- 个人实践目录：`.practice/{slug}/`（生成后必须验证 Git 忽略）
 
-下一步：先在 `references/research-notes.md` 记录来源和不确定点，再把 README 的课程地图补全，然后逐页编写正文、实践与评估；不要创建 `lessons/00-course-map.md`。
+下一步：先研究可靠来源并完成课程地图，再逐章编写正文和章末练习，最后设计唯一主实践；不要创建 `lessons/00-course-map.md`、独立练习页、研究笔记或参考书目。
 """)
-    write_new(base / "references/research-notes.md", "# 研究笔记\n\n按问题记录来源、版本、访问日期、关键事实、用途、限制和冲突。\n")
     if not existing:
         data["courses"].append(course)
         index_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

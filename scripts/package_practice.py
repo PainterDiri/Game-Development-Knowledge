@@ -4,7 +4,7 @@
 The website remains the source of truth for lessons, practice instructions,
 questions, answers, and explanations. The ZIP generated here is intentionally
 smaller: it contains only explicitly whitelisted runnable code, tests, fixtures,
-configuration, and integration contracts that a learner can download and copy
+configuration, and supporting materials that a learner can download and copy
 into a personal project.
 
 Generated builds, caches, personal practice state, private paths, and secrets
@@ -38,7 +38,6 @@ ROLE_DESTINATIONS = {
     "starter-code": "starter",
     "reference-code": "reference",
     "test-fixture": "fixtures",
-    "integration-contract": "contracts",
     "supporting-material": "materials",
     "license": "licenses",
 }
@@ -101,14 +100,14 @@ def generated_readme(course: str, manifest: dict, entries: list[tuple[str, str, 
     lines = [
         f"# {manifest.get('title', course)}：实践代码下载包",
         "",
-        "这是由 `scripts/package_practice.py` 生成的代码优先下载包。课程正文、实践题面、提示、答案和完整解释继续放在学习网站的课程页面中；本包只提供可运行代码、测试、fixture、配置和主项目接入契约。",
+        "这是由 `scripts/package_practice.py` 生成的代码优先下载包。课程正文、实践题面、章末练习讲解继续放在学习网站中；本包只提供可运行代码、测试、fixture 和配置。",
         "",
         "## 推荐使用顺序",
         "",
         "1. 在网站课程页阅读实践目标、约束、验收和失败诊断；",
-        "2. 解压本包，在包内的 `starter/` 或 `code/` 中开始修改；若只有 `reference/`，请把它当作可运行参考基线，不要把它误认为未完成的起始骨架；",
+        "2. 解压到仓库外，或复制到仓库的 `.practice/<course-slug>/` 后再修改；若只有 `reference/`，先复制副本，不要直接编辑教材源文件；",
         "3. 先按代码目录中的 README、Makefile 或命令运行测试，再逐步完成网站题面；",
-        "4. 需要接入自己的 Unity `RogueSlice` 时，只按 `contracts/` 中的输入/输出、所有权、回滚和冒烟验收复制结果，不要覆盖整个项目。",
+        "4. 修改前确认 `git check-ignore` 命中 `.practice/`；不要使用 `git add -f` 强制添加个人练习。",
         "",
         "## 包内内容",
         "",

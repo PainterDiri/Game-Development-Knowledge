@@ -134,3 +134,34 @@ git log --oneline --decorate --graph --all
 ```
 
 如果只能说“把代码同步了”，还没有掌握分支。你需要指出**哪个引用从哪个提交移动到哪个提交**。第 4 章处理历史真正分叉后的 merge、rebase、冲突和恢复。
+
+
+## 本章练习
+
+### T03-Q1：fetch 与 pull
+
+远端 main 前进，本地 feature 有提交。先做什么？比较 `fetch`、`pull --ff-only` 和 `pull --rebase`。
+
+<details><summary>最小提示</summary>
+
+先 fetch 看图，不要直接 pull。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+`git fetch origin` 更新 `origin/main` 和对象，不改工作区；`pull --ff-only` 只有可直接前移才整合；`pull --rebase` 会重放未共享提交、改变提交 ID。用 `git log --graph --all` 验证。force-with-lease 只在个人未共享分支且团队允许时使用。游戏映射：构建分支要知道自己基于哪个提交。
+</details>
+
+### T03-Q2：把证据写出来
+
+请为本章主题列出一个最小可执行验证，并说明预期结果和失败后的下一步。
+
+<details><summary>最小提示</summary>
+
+不要只写“运行一下”；写出输入、命令、观察对象和判定条件。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+合格验证应固定输入并记录命令、退出码、变更的 Git 状态或构建产物；预期结果必须可观察，失败时能缩小到一个阶段或不变量。若结果受时间、网络、缓存或未提交工作影响，应先隔离这些变量。常见错误是只看屏幕上的成功文字，不检查退出码、diff、artifact 或清理后重建。游戏映射：工程质量来自可重复证据，而不是一次“看起来能跑”。
+</details>

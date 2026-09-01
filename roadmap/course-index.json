@@ -10,20 +10,17 @@
       "source": "增补",
       "depth": "D2",
       "phase": 0,
-      "practice": "P0",
       "status": "completed",
       "shortTitle": "工具链与 Git",
       "summary": "把环境、版本控制、构建、调试和自动检查变成可靠的日常工作流。",
       "outcome": "交付一个能从全新环境复现构建、测试和发布的最小游戏工程。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "adapter",
-      "projectSlice": "F0 可复现工程接缝",
       "prerequisites": [],
       "teachingArc": "可观察的文件与命令 → 工作区/暂存区/提交 → 分支与远端 → 合并和恢复 → 团队交付 → 构建输入与产物 → 可复现环境 → 测试诊断 → CI 发布回滚",
       "expectedLessonScale": "D2：9 个连续章节，从终端与 Git 基础到团队协作、构建和发布",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "可复现的命令行小游戏工程"
     },
     {
       "order": 1,
@@ -32,22 +29,19 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 1,
-      "practice": "P0",
       "status": "completed",
       "shortTitle": "C 程序设计",
       "summary": "从内存、指针、数据布局和生命周期理解游戏底层，而不是只会写语法。",
       "outcome": "实现并验证一个内存边界清晰、可调试的小型运行时组件库。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F1 运行时基础库",
       "prerequisites": [
         "toolchain-and-git"
       ],
-      "teachingArc": "运行第一个程序 → 对象/类型/状态 → 表达式与数值边界 → 分支与循环不变量 → 函数、作用域与调用栈 → 头文件、链接与模块 → 数组与连续内存 → 字符串与缓冲区 → 指针、const 与别名 → 输出参数与区间 API → 动态内存与所有权 → 结构体、布局与序列化 → 枚举、联合与位标志 → 文件 I/O 与错误处理 → UB、Sanitizer 与调试 → 测试、不变量与基准 → 运行时组件库 → C ABI 与 Unity/UE 适配",
-      "expectedLessonScale": "D3：18 个连续知识单元；对象、数组、指针、生命周期、未定义行为和调试均有独立示例与验证",
+      "teachingArc": "程序与 I/O → 对象、类型与状态 → 表达式与数值边界 → 分支、循环与不变量 → 函数、作用域与调用栈 → 多文件、头文件与链接 → 数组与连续内存 → 字符串、输入与解析 → 指针、const 与别名 → 结构体、枚举与位标志 → 动态内存与所有权 → 文件、序列化与错误模型 → 预处理、未定义行为与调试 → 测试、模块设计与性能证据",
+      "expectedLessonScale": "D3：14 个连续教材式章节；对象、数值边界、控制流、函数、链接、数组、字符串、指针、数据建模、所有权、序列化、未定义行为、测试和性能均有独立示例、故意失败、验证与章末练习",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "C17 命令行房间战斗模拟器"
     },
     {
       "order": 2,
@@ -56,22 +50,19 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 1,
-      "practice": "P1",
       "status": "scaffolded",
       "shortTitle": "离散数学",
       "summary": "用逻辑、集合、关系、图和状态机精确表达房间、规则与组合系统。",
       "outcome": "建立可验证的房间图、状态机或道具规则模型。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F2 房间图与规则",
       "prerequisites": [
         "toolchain-and-git"
       ],
       "teachingArc": "命题与逻辑 → 集合与关系 → 计数与组合 → 证明与不变量 → 图与遍历 → 树 → 状态机 → 规则系统与可验证房间图",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "房间连通与规则验证器"
     },
     {
       "order": 3,
@@ -80,22 +71,19 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 1,
-      "practice": "P1/P2",
       "status": "scaffolded",
       "shortTitle": "游戏线性代数",
       "summary": "掌握向量、矩阵、坐标系、旋转与投影在移动、相机和渲染中的机制。",
       "outcome": "独立推导并实现一组可视化的 2D/3D 变换实验。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F3 战斗空间",
       "prerequisites": [
         "toolchain-and-git"
       ],
       "teachingArc": "坐标与位移的可观察问题 → 标量与向量 → 向量加法/数乘 → 长度、距离与单位向量 → 点积与投影 → 叉积与朝向 → 线性组合与生成空间 → 基与坐标表示 → 线性映射 → 矩阵表示与乘法 → 复合变换与顺序 → 2D 平移/旋转/缩放 → 齐次坐标 → 3D 旋转与欧拉角边界 → 相机坐标与视图变换 → 正交/透视投影 → 几何查询与碰撞 → 数值误差与稳定实现 → 向量/矩阵与 embedding/张量 → AI 与渲染中的统一验证实验",
       "expectedLessonScale": "D3：18–24 个连续知识单元；向量、基、矩阵、坐标变换、旋转、投影、数值误差和 AI 张量连接必须有推导与可视化实验",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "2D 战斗向量实验场"
     },
     {
       "order": 4,
@@ -104,22 +92,19 @@
       "source": "培养方案",
       "depth": "D2",
       "phase": 1,
-      "practice": "P1/P3",
       "status": "scaffolded",
       "shortTitle": "微积分与概率",
       "summary": "连接运动、插值、数值变化与可控随机，避免只会套公式。",
       "outcome": "构建可复现的运动与掉落模拟，并用数据验证分布和误差。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F4 运动与概率",
       "prerequisites": [
         "toolchain-and-git"
       ],
       "teachingArc": "变化率与函数 → 导数 → 积分直觉 → 插值与数值更新 → 随机变量 → 常见分布 → 期望/方差 → 蒙特卡洛 → 统计验证 → 运动、掉落与平衡实验",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": false,
-      "deliveryPriority": 2
+      "practiceRequired": false,
+      "deliveryPriority": 2,
+      "practiceProject": "运动、插值与掉落概率模拟器"
     },
     {
       "order": 5,
@@ -128,22 +113,19 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 2,
-      "practice": "P0/P1",
       "status": "scaffolded",
       "shortTitle": "数据结构",
       "summary": "理解容器、队列、哈希、树、图、对象池的成本与运行时边界。",
       "outcome": "为房间、实体、事件或资源选择并实现合适的数据结构。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F1/F2 容器与查询",
       "prerequisites": [
         "c-programming"
       ],
       "teachingArc": "成本模型 → 数组与动态数组 → 链表 → 栈与队列 → 哈希表 → 堆与优先队列 → 树 → 图 → 空间查询 → 对象池 → 基准与选择",
       "expectedLessonScale": "D3：14–20 个连续知识单元；每种结构都要从需求到表示、不变量、实现、复杂度、测试和失败演进",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "敌人、投射物与事件运行时容器"
     },
     {
       "order": 6,
@@ -152,14 +134,10 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 2,
-      "practice": "P1",
       "status": "scaffolded",
       "shortTitle": "算法分析",
       "summary": "用复杂度、空间索引、图算法和调度方法解决规模化游戏问题。",
       "outcome": "实现可基准测试的寻路、查询或调度模块，并解释取舍。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F2 空间查询与调度",
       "prerequisites": [
         "data-structures",
         "discrete-mathematics"
@@ -167,8 +145,9 @@
       "teachingArc": "渐进复杂度 → 分治与递归 → 排序/选择 → 高级树与堆 → 图算法 → 动态规划 → 贪心与证明 → 随机化 → 基准、近似与工程取舍",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": false,
-      "deliveryPriority": 2
+      "practiceRequired": false,
+      "deliveryPriority": 2,
+      "practiceProject": "空间查询与帧内调度实验"
     },
     {
       "order": 7,
@@ -177,22 +156,19 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 2,
-      "practice": "P0/P2",
       "status": "scaffolded",
       "shortTitle": "游戏 OOP",
       "summary": "用组合、接口、生命周期和所有权构建可维护的 C++/C# 玩法模块。",
       "outcome": "完成一个可扩展且可测试的战斗或道具领域模型。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "adapter",
-      "projectSlice": "F3/F4 领域模型",
       "prerequisites": [
         "c-programming"
       ],
       "teachingArc": "对象与职责 → 封装与不变量 → 组合 → 继承与多态 → 接口与依赖 → 生命周期 → 测试替身 → C++/C#工程边界 → 游戏系统重构",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 组件化战斗状态模型"
     },
     {
       "order": 8,
@@ -201,22 +177,19 @@
       "source": "培养方案",
       "depth": "D2",
       "phase": 3,
-      "practice": "P0/P2",
       "status": "scaffolded",
       "shortTitle": "组成与体系结构",
       "summary": "把指令、缓存、数据布局、SIMD 和 CPU/GPU 协作映射到帧预算。",
       "outcome": "用基准与性能数据解释一次真实的数据布局或缓存优化。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "adapter",
-      "projectSlice": "F7 性能证据",
       "prerequisites": [
         "c-programming"
       ],
       "teachingArc": "数据如何表示 → 指令与执行 → CPU/缓存/内存 → I/O 与并行 → 性能计数 → 帧预算 → 游戏运行时瓶颈定位",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": false,
-      "deliveryPriority": 2
+      "practiceRequired": false,
+      "deliveryPriority": 2,
+      "practiceProject": "帧预算、缓存与数据布局测量实验"
     },
     {
       "order": 9,
@@ -225,14 +198,10 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 3,
-      "practice": "P0/P2",
       "status": "scaffolded",
       "shortTitle": "操作系统",
       "summary": "理解进程、线程、同步、文件、虚拟内存和任务系统如何支撑游戏运行时。",
       "outcome": "实现并诊断一个有明确所有权、同步和失败路径的并发任务实验。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "adapter",
-      "projectSlice": "F7 任务与所有权",
       "prerequisites": [
         "c-programming",
         "computer-organization"
@@ -240,8 +209,9 @@
       "teachingArc": "进程与线程 → 虚拟内存 → 文件与 I/O → 同步 → 调度 → 网络与资源 → 崩溃/日志/工具 → 游戏运行时生命周期",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": false,
-      "deliveryPriority": 2
+      "practiceRequired": false,
+      "deliveryPriority": 2,
+      "practiceProject": "游戏任务系统与并发诊断器"
     },
     {
       "order": 10,
@@ -250,14 +220,10 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 3,
-      "practice": "P3/P5",
       "status": "scaffolded",
       "shortTitle": "游戏软件工程",
       "summary": "围绕需求、边界、测试、CI、协作和演进控制项目复杂度。",
       "outcome": "把一个玩法模块交付成可维护、可回归、可持续迭代的工程切片。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "direct",
-      "projectSlice": "F5 纵切片工程骨架",
       "prerequisites": [
         "toolchain-and-git",
         "object-oriented-programming"
@@ -265,8 +231,9 @@
       "teachingArc": "需求与任务 → 设计与接口 → 版本控制协作 → 测试策略 → review 与 CI → 集成与发布 → 变更管理 → 游戏团队交付",
       "expectedLessonScale": "D3：10–15 个连续知识单元，覆盖任务、设计、测试、review、CI、发布和团队演进",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 小型玩法功能团队交付演练"
     },
     {
       "order": 11,
@@ -275,14 +242,10 @@
       "source": "培养方案",
       "depth": "D2",
       "phase": 4,
-      "practice": "P3/P5",
       "status": "scaffolded",
       "shortTitle": "游戏数据库",
       "summary": "从建模、约束、索引和事务设计存档、配置、账号与内容数据。",
       "outcome": "实现可迁移、可校验、可恢复的存档或内容数据方案。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "adapter",
-      "projectSlice": "F6 存档与内容数据",
       "prerequisites": [
         "data-structures",
         "software-engineering"
@@ -290,8 +253,9 @@
       "teachingArc": "数据模型 → 约束与查询 → 索引 → 事务 → 并发 → 存档迁移 → 内容工具 → 在线服务与恢复",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": false,
-      "deliveryPriority": 2
+      "practiceRequired": false,
+      "deliveryPriority": 2,
+      "practiceProject": "版本化存档与内容数据库"
     },
     {
       "order": 12,
@@ -300,14 +264,10 @@
       "source": "培养方案",
       "depth": "D3",
       "phase": 4,
-      "practice": "network-lab/P5",
       "status": "scaffolded",
       "shortTitle": "多人游戏网络",
       "summary": "从协议、拥塞、延迟和丢包理解多人同步的物理限制。",
       "outcome": "做出可观测的客户端/服务器实验并解释预测、插值与权威性。",
-      "practiceTrack": "online-sidecar",
-      "integrationMode": "adapter",
-      "projectSlice": "F8 联机实验",
       "prerequisites": [
         "computer-organization",
         "operating-systems"
@@ -315,8 +275,9 @@
       "teachingArc": "分层与寻址 → 可靠传输 → 延迟/丢包/拥塞 → 协议与序列化 → 客户端/服务器 → 同步与预测 → 安全与观测 → 多人游戏接缝",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "supporting",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "本地权威房间服务器"
     },
     {
       "order": 13,
@@ -325,14 +286,10 @@
       "source": "增补",
       "depth": "D3",
       "phase": 5,
-      "practice": "P2/P3",
       "status": "scaffolded",
       "shortTitle": "计算机图形学",
       "summary": "从变换、光栅化、着色与可见性理解画面如何生成以及为何变慢。",
       "outcome": "实现一条最小渲染实验并能用帧数据定位视觉或性能问题。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F3 渲染与反馈",
       "prerequisites": [
         "linear-algebra-for-games",
         "calculus-and-probability"
@@ -340,8 +297,9 @@
       "teachingArc": "像素与采样 → 几何表示 → 坐标变换 → 光栅化 → 深度与混合 → 纹理 → 光照 → shader → 性能与调试 → 游戏渲染接缝",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "软件光栅化战斗场景"
     },
     {
       "order": 14,
@@ -350,14 +308,10 @@
       "source": "培养方案",
       "depth": "D2",
       "phase": 5,
-      "practice": "P3/P5",
       "status": "scaffolded",
       "shortTitle": "多媒体与资源管线",
       "summary": "理解纹理、动画、音频、压缩、导入和异步加载的生产成本。",
       "outcome": "建立可重复导入、校验、打包和加载的最小资源管线。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "export",
-      "projectSlice": "F6 资源管线",
       "prerequisites": [
         "toolchain-and-git",
         "computer-graphics"
@@ -365,8 +319,9 @@
       "teachingArc": "图像/音频/动画表示 → 编码与压缩 → 导入与元数据 → 依赖与版本 → 构建管线 → 运行时加载 → 预算与质量检查",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 资源导入与构建管线"
     },
     {
       "order": 15,
@@ -375,14 +330,10 @@
       "source": "培养方案",
       "depth": "D2",
       "phase": 6,
-      "practice": "dsl-lab/P3",
       "status": "scaffolded",
       "shortTitle": "编译原理与 DSL",
       "summary": "用词法、语法、AST、解释与诊断构建可控的游戏配置语言。",
       "outcome": "实现一个带错误定位和测试的迷你配置 DSL。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "export",
-      "projectSlice": "F4 内容 DSL",
       "prerequisites": [
         "data-structures",
         "discrete-mathematics"
@@ -390,8 +341,9 @@
       "teachingArc": "文本与词法 → 语法与 AST → 语义检查 → 解释执行 → 编译/字节码 → 错误诊断 → 游戏配置 DSL → 工具链集成",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "specialization",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "道具配置 DSL"
     },
     {
       "order": 16,
@@ -400,14 +352,10 @@
       "source": "计算机科学类选修",
       "depth": "D2",
       "phase": 6,
-      "practice": "dsl-lab/P3",
       "status": "scaffolded",
       "shortTitle": "编程语言与脚本",
       "summary": "比较类型、闭包、泛型、内存管理和并发模型，理解脚本边界。",
       "outcome": "为玩法脚本选择合适的执行与绑定方案，并说明安全和性能边界。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "adapter",
-      "projectSlice": "F4 玩法脚本边界",
       "prerequisites": [
         "c-programming",
         "data-structures"
@@ -415,8 +363,9 @@
       "teachingArc": "值与类型 → 作用域与闭包 → 高阶函数 → 泛型与抽象 → 内存管理 → 异步/并发 → 脚本嵌入 → 语言选择与架构",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "specialization",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "可热重载的玩法脚本沙箱"
     },
     {
       "slug": "machine-learning-foundations",
@@ -424,14 +373,10 @@
       "source": "增补/AI基础",
       "depth": "D3",
       "phase": 6,
-      "practice": "P1/P3",
       "status": "scaffolded",
       "shortTitle": "机器学习基础",
       "summary": "从数据、表示、损失、梯度和评估建立机器学习心智模型，连接线性代数与游戏数据。",
       "outcome": "实现一个有基线、训练/验证/测试切分、指标和失败分析的小型模型，并解释何时不该使用机器学习。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "export",
-      "projectSlice": "F6 AI 数据与模型基础",
       "prerequisites": [
         "c-programming",
         "linear-algebra-for-games",
@@ -442,8 +387,9 @@
       "expectedLessonScale": "D3：12–18 个连续知识单元，包含推导、代码、基线、数据切分、指标和失败分析",
       "order": 17,
       "curriculumRole": "supporting",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "游戏行为数据分类器"
     },
     {
       "slug": "llm-and-transformers",
@@ -451,14 +397,10 @@
       "source": "增补/生成式 AI",
       "depth": "D3",
       "phase": 6,
-      "practice": "P1/P3",
       "status": "scaffolded",
       "shortTitle": "LLM 与 Transformer",
       "summary": "从 token 和 embedding 到注意力、Transformer、训练、推理、RAG 与工具调用，建立可验证的语言模型地图。",
       "outcome": "实现一个简化的字符级语言模型/注意力实验，能用指标和资源预算评估 LLM 方案，而不是只会调用 API。",
-      "practiceTrack": "supporting-lab",
-      "integrationMode": "adapter",
-      "projectSlice": "F6 生成式 AI 旁路",
       "prerequisites": [
         "machine-learning-foundations",
         "linear-algebra-for-games"
@@ -467,8 +409,9 @@
       "expectedLessonScale": "D3：14–20 个连续知识单元，按序列建模、注意力、训练、推理和应用工程拆分",
       "order": 18,
       "curriculumRole": "supporting",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "受约束 NPC 对话原型"
     },
     {
       "slug": "generative-ai-for-games",
@@ -476,14 +419,10 @@
       "source": "增补/AI应用",
       "depth": "D3",
       "phase": 6,
-      "practice": "P3/P5",
       "status": "scaffolded",
       "shortTitle": "生成式 AI 游戏工程",
       "summary": "把 LLM、图像/音频生成、检索、评估和人工审核放进可控的游戏内容与开发工具流程。",
       "outcome": "交付一个带数据许可、提示版本、评估集、人工审核、缓存和失败回退的游戏开发 AI 工具原型。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "adapter",
-      "projectSlice": "F6 AI 工具与内容管线",
       "prerequisites": [
         "llm-and-transformers",
         "multimedia-and-asset-pipeline",
@@ -493,8 +432,9 @@
       "expectedLessonScale": "D3：10–16 个连续知识单元，至少包含基线、评估集、人工审核和失败回退实验",
       "order": 19,
       "curriculumRole": "supporting",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "可审计的游戏内容生成工具"
     },
     {
       "order": 20,
@@ -503,14 +443,10 @@
       "source": "增补/AI类课程",
       "depth": "D3",
       "phase": 6,
-      "practice": "P1/P3",
       "status": "scaffolded",
       "shortTitle": "游戏 AI",
       "summary": "从规则式决策、寻路和行为树开始，再比较效用、学习策略与程序化生成，建立可解释、可复现、可调参的游戏 AI。",
       "outcome": "实现一个能解释决策、复现行为、接受设计调参并与生成内容边界清晰的敌人 AI。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "direct",
-      "projectSlice": "F4 敌人与生成",
       "prerequisites": [
         "data-structures",
         "linear-algebra-for-games",
@@ -519,8 +455,9 @@
       "teachingArc": "状态与规则 → 寻路 → FSM → 行为树 → 效用 → 规划 → 程序化生成 → 学习策略边界 → 观测、调参与回放",
       "expectedLessonScale": "D3：12–18 个连续知识单元，先规则式决策再寻路、行为、效用、生成、学习策略边界和可观测性",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 敌人决策与寻路系统"
     },
     {
       "order": 21,
@@ -529,14 +466,10 @@
       "source": "增补",
       "depth": "D3",
       "phase": 6,
-      "practice": "P2/P4",
       "status": "scaffolded",
       "shortTitle": "游戏引擎架构",
       "summary": "贯通帧循环、场景、实体组件、资源、序列化、反射与工具层。",
       "outcome": "构建一个小型运行时切片，并明确各系统的状态和生命周期。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "direct",
-      "projectSlice": "F5 运行时接缝",
       "prerequisites": [
         "computer-organization",
         "operating-systems",
@@ -546,8 +479,9 @@
       "teachingArc": "可运行循环 → 时间与生命周期 → 场景与实体 → 组件与系统 → 资源与序列化 → 事件边界 → 工具/运行时分离 → 测试与可观测性 → 引擎接缝",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "小型场景与组件运行时"
     },
     {
       "order": 22,
@@ -556,14 +490,10 @@
       "source": "增补",
       "depth": "D3",
       "phase": 7,
-      "practice": "P3",
       "status": "scaffolded",
       "shortTitle": "Unity 肉鸽生产",
       "summary": "把战斗、房间、道具、随机、存档、反馈和工具整合为可玩的纵切片。",
       "outcome": "完成可重复游玩 10–15 分钟、可测试和可打包的 2D 肉鸽核心循环。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "direct",
-      "projectSlice": "F5 Unity 核心纵切片",
       "prerequisites": [
         "game-engine-architecture",
         "game-ai",
@@ -573,8 +503,9 @@
       "teachingArc": "核心循环 → 输入与战斗 → 房间与生成 → 道具与组合 → 存档与元进度 → UI/音频/反馈 → 性能与发行 → 纵切片验收",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 2D 肉鸽动作纵切片"
     },
     {
       "order": 23,
@@ -583,14 +514,10 @@
       "source": "增补",
       "depth": "D2→D3",
       "phase": 8,
-      "practice": "P4",
       "status": "scaffolded",
       "shortTitle": "UE 玩法编程",
       "summary": "把已有原理迁移到 UE C++、蓝图、Gameplay 框架与数据驱动工作流。",
       "outcome": "在 UE 中重建一个边界清晰、可调试的玩法系统。",
-      "practiceTrack": "ue-migration",
-      "integrationMode": "standalone",
-      "projectSlice": "F9 UE 系统重建",
       "prerequisites": [
         "game-engine-architecture",
         "object-oriented-programming",
@@ -599,8 +526,9 @@
       "teachingArc": "Actor/Component 生命周期 → 输入与能力 → Gameplay Framework → 数据资产 → 动画与碰撞 → 调试与自动化 → Unity 概念迁移 → UE 工程接缝",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "specialization",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "UE 玩法能力原型"
     },
     {
       "order": 24,
@@ -609,14 +537,10 @@
       "source": "增补/网络拓展",
       "depth": "D2→D3",
       "phase": 8,
-      "practice": "network-lab/P5",
       "status": "scaffolded",
       "shortTitle": "在线服务",
       "summary": "把权威服务器、复制、匹配、账号、遥测和运营接口连成可信系统。",
       "outcome": "交付一个考虑信任边界、故障恢复与可观测性的在线功能原型。",
-      "practiceTrack": "online-sidecar",
-      "integrationMode": "adapter",
-      "projectSlice": "F8 在线服务旁路",
       "prerequisites": [
         "computer-networks",
         "database-systems",
@@ -625,8 +549,9 @@
       "teachingArc": "服务边界 → 协议与序列化 → 身份与数据 → 权威状态 → 同步/预测/回滚 → 匹配与房间 → 观测与扩展 → 在线游戏接缝",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "supporting",
-      "capstoneRequired": false,
-      "deliveryPriority": 3
+      "practiceRequired": false,
+      "deliveryPriority": 3,
+      "practiceProject": "本地在线房间与观测服务"
     },
     {
       "order": 25,
@@ -635,14 +560,10 @@
       "source": "增补/软件工程拓展",
       "depth": "D3",
       "phase": 8,
-      "practice": "P3/P5",
       "status": "scaffolded",
       "shortTitle": "优化、调试与工具",
       "summary": "建立测量优先的 CPU/GPU/内存诊断方法，并把重复劳动产品化为工具。",
       "outcome": "用证据修复一个性能或稳定性问题，并留下可复用的诊断工具。",
-      "practiceTrack": "shared-unity",
-      "integrationMode": "adapter",
-      "projectSlice": "F7 性能与诊断",
       "prerequisites": [
         "computer-organization",
         "operating-systems",
@@ -652,8 +573,9 @@
       "teachingArc": "问题定义 → 观测与基线 → CPU/GPU/内存 → 数据结构与资源 → 并发与加载 → 调试器/分析器 → 自动化工具 → 优化回归证据",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "Unity 性能回归与诊断工具"
     },
     {
       "order": 26,
@@ -662,14 +584,10 @@
       "source": "工程实践/毕业设计增补",
       "depth": "D3",
       "phase": 9,
-      "practice": "P5",
       "status": "scaffolded",
       "shortTitle": "发行与毕业项目",
       "summary": "完成范围控制、测试、构建、平台适配、商店材料和上线后的版本闭环。",
       "outcome": "发布一个可下载、可复现构建并有完整验收证据的小型肉鸽游戏。",
-      "practiceTrack": "shipping",
-      "integrationMode": "direct",
-      "projectSlice": "F10 发行候选版",
       "prerequisites": [
         "software-engineering",
         "unity-roguelite-production",
@@ -679,8 +597,9 @@
       "teachingArc": "范围与验收 → 内容冻结 → 构建与签名 → 平台测试 → 发布候选 → 商店/补丁/遥测 → 事故回滚 → 纵切片复盘",
       "expectedLessonScale": "按概念依赖确定章节数量；不得以少页为目标压缩核心推导、实现、失败与验证，完成课程地图后再定稿。",
       "curriculumRole": "core",
-      "capstoneRequired": true,
-      "deliveryPriority": 1
+      "practiceRequired": true,
+      "deliveryPriority": 1,
+      "practiceProject": "可发行的 2D 肉鸽毕业项目"
     }
   ]
 }

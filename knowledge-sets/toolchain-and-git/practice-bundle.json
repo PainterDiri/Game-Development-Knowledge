@@ -9,11 +9,6 @@
       "path": "code/repro-game",
       "role": "reference-code",
       "description": "可运行的 Python 确定性房间生成、构建和测试基线"
-    },
-    {
-      "path": "integration-contract.md",
-      "role": "integration-contract",
-      "description": "导出到 Unity RogueSlice 的运行上下文契约"
     }
   ],
   "exclude": [

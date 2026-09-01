@@ -9,8 +9,6 @@
 
 > **适合谁**：默认你是程序初学者。只要会打开文件和安装 Python/Git，就可以从第 1 章开始；课程不会要求你先理解“构建边界”“提交图”或 CI。
 
-> **实践接缝**：`supporting-lab` / `adapter` / F0 可复现工程接缝。先用无引擎 Python 小项目理解工具链，再把 `contentVersion + buildId + seed + runId` 契约接入 Unity；不要求把 Python 代码直接放进游戏工程。
-
 ## 为什么课程要按这个顺序
 
 最开始只讲“构建系统的边界”会产生跳步：学习者尚不知道命令怎样运行、Git 在记录哪个状态、团队为何需要分支，就被要求分类源码、缓存和 artifact。本课程改为三段递进：
@@ -72,12 +70,11 @@ pwd
 
 若任何命令不知道在做什么，直接从第 1 章开始。若已能独立完成 `status → diff → add -p → commit → switch -c → push`，可快速浏览第 1–3 章，但不要跳过第 4–5 章的共享历史和团队交付逻辑。
 
-## 主实践与练习
+## 唯一主实践与章末练习
 
-- [主实践：可复现 seeded-room 工程](practice.md)：先完成 Git 基础里程碑，再做确定性、冷构建和 bisect；
-- [自测与折叠解析](assessments.md)：覆盖 Git 状态、分支策略、工程边界、seed 回归、资产冲突、CI 和回滚；
-- [主项目接入契约](integration-contract.md)：把构建/运行身份接入 Unity `RogueSlice`；
-- [来源与版本](references/bibliography.md)：官方 Git、GitHub Actions、Unity、Unreal 与可复现构建资料。
+- [主实践：可复现 seeded-room 工程](practice.md)：在隔离的 `.practice/toolchain-and-git/` 中完成 Git 基础里程碑、确定性、冷构建和 bisect；
+- 每章结尾均有代表性练习、最小提示与折叠讲解，不再设置集中练习题页面；
+- 课程中使用的版本敏感资料在相关章节就地标注，不再设置独立书目或研究笔记页。
 
 ## 与后续课程的连接
 

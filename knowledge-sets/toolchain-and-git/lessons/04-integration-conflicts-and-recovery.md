@@ -134,3 +134,34 @@ git bisect reset
 - 文件冲突结束后：必须测试语义和资产引用。
 
 第 5 章把这些操作放进完整团队流程：任务、PR、评审、CI、发布候选和正式版本。
+
+
+## 本章练习
+
+### T04-Q1：选择恢复命令
+
+共享 main 上的坏提交已被他人拉取；本地未共享分支误 reset。分别选择命令。
+
+<details><summary>最小提示</summary>
+
+共享历史与个人未共享历史的答案不同。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+共享 main 用 `git revert` 创建抵消提交，不重写历史；个人误 reset 用 `git reflog` 找旧 HEAD，再建 rescue 分支；`git reset --hard` 可能丢未提交工作。merge/rebase 冲突都要 `status`、解决、`git diff --check`、测试。游戏映射：发布回滚还要重新构建 artifact，不能只改 Git 指针。
+</details>
+
+### T04-Q2：把证据写出来
+
+请为本章主题列出一个最小可执行验证，并说明预期结果和失败后的下一步。
+
+<details><summary>最小提示</summary>
+
+不要只写“运行一下”；写出输入、命令、观察对象和判定条件。
+</details>
+
+<details><summary>讲解与验证</summary>
+
+合格验证应固定输入并记录命令、退出码、变更的 Git 状态或构建产物；预期结果必须可观察，失败时能缩小到一个阶段或不变量。若结果受时间、网络、缓存或未提交工作影响，应先隔离这些变量。常见错误是只看屏幕上的成功文字，不检查退出码、diff、artifact 或清理后重建。游戏映射：工程质量来自可重复证据，而不是一次“看起来能跑”。
+</details>

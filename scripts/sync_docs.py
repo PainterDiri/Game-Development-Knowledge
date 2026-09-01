@@ -86,7 +86,7 @@ def course_landing(course: dict) -> str:
 <div class="course-meta">
 <span class="course-badge">阶段 {course['phase']} · {PHASE_NAMES.get(course['phase'], '')}</span>
 <span class="course-badge">深度 {course['depth']}</span>
-<span class="course-badge">实践 {course['practice']}</span>
+<span class="course-badge">主实践</span>
 <span class="course-badge">{ROLE_LABELS.get(course.get("curriculumRole"), course.get("curriculumRole", "未分层"))}</span>
 <span class="course-badge {css_class}">{label}</span>
 </div>
@@ -99,13 +99,12 @@ def course_landing(course: dict) -> str:
 - **教学弧**：{course.get('teachingArc') or '生成正文前必须先补齐概念依赖图'}
 - **预计正文规模**：{course.get('expectedLessonScale') or '生成正文前必须先确定'}
 
-## 实践接缝
+## 本课程主实践
 
-- **轨道**：`{course['practiceTrack']}`
-- **集成方式**：`{course['integrationMode']}`
-- **主项目切片**：{course['projectSlice']}
-- **毕业项目关系**：{"必修" if course.get("capstoneRequired") else "可延后；不阻塞基础纵切片"}
-- **交付优先级**：P{course.get("deliveryPriority", "?")}（P1 先做，P3 可在主线稳定后再做）
+- **项目**：{course['practiceProject']}
+- **原则**：只验证本课程知识；不要求接入最终项目。个人代码放入 `.practice/{course['slug']}/` 或仓库外。
+- **主实践路线**：{"主线建议完成" if course.get("practiceRequired") else "可按方向选学"}
+- **交付优先级**：P{course.get("deliveryPriority", "?")}（P1 优先）
 
 ## 学完后的可验证出口
 
@@ -142,7 +141,7 @@ def downloads_landing(courses: list[dict], bundled: set[str]) -> str:
     lines = [
         "# 实践代码下载",
         "",
-        "本页集中列出网站已经发布的实践代码下载。课程正文、实践题面、提示、答案和验收说明仍以课程页面为准；ZIP 只承载可运行代码、测试、fixture、配置和主项目接入契约。",
+        "本页集中列出网站已经发布的实践代码下载。课程正文、实践题面、章末练习讲解和验收说明仍以课程页面为准；ZIP 只承载可运行代码、测试、fixture 与配置。",
         "",
         "## 下载规则",
         "",
@@ -162,11 +161,11 @@ def downloads_landing(courses: list[dict], bundled: set[str]) -> str:
         lines.append(
             f"| [{course['title']}](../courses/{course['slug']}/README.md) | "
             f"[下载 `{course['slug']}-code.zip`]({course['slug']}-code.zip) | "
-            f"{course['projectSlice']} |"
+            f"{course['practiceProject']} |"
         )
     if not bundled:
         lines.extend(["| 暂无 | — | 下一门完成课程通过代码包门禁后会出现在这里。 |"] )
-    lines.extend(["", "## 对课程作者的约束", "", "每门课程最多提供一个主实践和两个微实验。没有独立代码价值的课程也可以下载数据、fixture、脚本或参考输入，但不能为了有 ZIP 而强行塞入 Unity 工程。", ""])
+    lines.extend(["", "## 对课程作者的约束", "", "每门课程只提供一个与本课直接相关的主实践。章节短验证不另算实践；没有独立代码价值的课程也可以下载数据、fixture、脚本或参考输入，但不能为了有 ZIP 而强行塞入 Unity 工程。", ""])
     return "\n".join(lines)
 
 
@@ -183,7 +182,7 @@ def append_bundle_link(destination: Path, course: dict, bundled: set[str]) -> No
     text += (
         f"\n\n{marker}\n\n"
         "## 下载实践代码\n\n"
-        "学习内容仍在本页及课程实践页中；下载包只包含经过白名单审核的可运行代码、测试、配置和主项目接入契约。"
+        "学习内容仍在本页及课程实践页中；下载包只包含经过白名单审核的可运行代码、测试和配置。请复制到 `.practice/` 或仓库外再修改。"
         f"\n\n[下载 `{course['slug']}-code.zip`](../../downloads/{course['slug']}-code.zip) · "
         "[查看全部实践代码下载](../../downloads/README.md)"
         "\n"
@@ -239,15 +238,15 @@ def build_course_catalog(courses: list[dict]) -> str:
             lines.extend([
                 f"-   :material-book-open-page-variant-outline: **[{course['shortTitle']}](courses/{course['slug']}/README.md)**",
                 "",
-                f"    <span class=\"course-badge\">{course['depth']}</span> <span class=\"course-badge\">{html.escape(str(course['practice']))}</span> <span class=\"course-badge\">{html.escape(ROLE_LABELS.get(course.get('curriculumRole'), course.get('curriculumRole', '未分层')))}</span> <span class=\"course-badge {css_class}\">{label}</span>",
+                f"    <span class=\"course-badge\">{course['depth']}</span> <span class=\"course-badge\">主实践</span> <span class=\"course-badge\">{html.escape(ROLE_LABELS.get(course.get('curriculumRole'), course.get('curriculumRole', '未分层')))}</span> <span class=\"course-badge {css_class}\">{label}</span>",
                 "",
                 f"    {course['summary']}",
                 "",
                 f"    <span class=\"course-outcome\"><strong>出口：</strong>{course['outcome']}</span>",
                 "",
-                f"    <span class=\"course-outcome\"><strong>接缝：</strong>`{course['practiceTrack']}` · `{course['integrationMode']}` · {html.escape(course['projectSlice'])}</span>",
+                f"    <span class=\"course-outcome\"><strong>主实践：</strong>{html.escape(course['practiceProject'])}</span>",
                 "",
-                f"    <span class=\"course-outcome\"><strong>路线：</strong>{'毕业项目必修' if course.get('capstoneRequired') else ROLE_LABELS.get(course.get('curriculumRole'), '可延后') + '，不阻塞基础纵切片'}</span>",
+                f"    <span class=\"course-outcome\"><strong>路线：</strong>{'主线建议完成主实践' if course.get('practiceRequired') else ROLE_LABELS.get(course.get('curriculumRole'), '可延后') + '，不阻塞基础纵切片'}</span>",
                 "",
             ])
         lines.extend(["</div>", ""])
@@ -258,12 +257,12 @@ def build_metadata_index(courses: list[dict]) -> str:
     return "\n".join([
         "# 课程元数据索引",
         "",
-        "本页供维护流程核对顺序、深度、阶段、实践接口和公开内容状态。普通学习请使用网站的课程总览。",
+        "本页供维护流程核对顺序、深度、阶段、主实践和公开内容状态。普通学习请使用网站的课程总览。",
         "",
-        "| 顺序 | 课程 | 深度 | 阶段 | 路线角色 | 毕业必修 | 实践 | 接缝轨道 | 集成方式 | 主项目切片 | 状态 |",
-        "|---:|---|---:|---:|---|---|---|---|---|---|---|",
+        "| 顺序 | 课程 | 深度 | 阶段 | 路线角色 | 主线建议完成 | 主实践 | 状态 |",
+        "|---:|---|---:|---:|---|---|---|---|",
         *[
-            f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {ROLE_LABELS.get(c.get('curriculumRole'), c.get('curriculumRole', '未分层'))} | {'是' if c.get('capstoneRequired') else '否'} | {c['practice']} | `{c['practiceTrack']}` | `{c['integrationMode']}` | {c['projectSlice']} | `{c['status']}` |"
+            f"| {c['order']} | {c['title']} | {c['depth']} | {c['phase']} | {ROLE_LABELS.get(c.get('curriculumRole'), c.get('curriculumRole', '未分层'))} | {'是' if c.get('practiceRequired') else '否'} | {c['practiceProject']} | `{c['status']}` |"
             for c in courses
         ],
         "",

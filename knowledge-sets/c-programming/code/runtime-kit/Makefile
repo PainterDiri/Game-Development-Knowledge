@@ -1,23 +1,28 @@
 CC ?= cc
 CFLAGS ?= -std=c17 -Wall -Wextra -Wconversion -Wshadow -pedantic -O0 -g
 SANITIZE_FLAGS ?= -fsanitize=address,undefined
+CPPFLAGS ?= -Iinclude
 
-SOURCES = rg_runtime.c
-TEST_SOURCES = test_runtime.c $(SOURCES)
+.PHONY: all test asan run clean
 
-.PHONY: all test asan clean
+all: arena test_runtime
 
-all: test_runtime
+arena: arena.c rg_runtime.c include/rg_runtime.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) arena.c rg_runtime.c -o $@
 
-test_runtime: $(TEST_SOURCES) include/rg_runtime.h
-	$(CC) $(CFLAGS) -Iinclude $(TEST_SOURCES) -o $@
+test_runtime: test_runtime.c rg_runtime.c include/rg_runtime.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) test_runtime.c rg_runtime.c -o $@
 
 test: test_runtime
 	./test_runtime
 
-asan: $(TEST_SOURCES) include/rg_runtime.h
-	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) -Iinclude $(TEST_SOURCES) -o test_runtime_asan
+asan: test_runtime.c rg_runtime.c include/rg_runtime.h
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $(CPPFLAGS) test_runtime.c rg_runtime.c -o test_runtime_asan
 	./test_runtime_asan
 
+run: arena
+	./arena --seed 42
+
 clean:
-	rm -f test_runtime test_runtime_asan
+	rm -f arena test_runtime test_runtime_asan
+	rm -rf *.dSYM

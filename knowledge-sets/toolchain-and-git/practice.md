@@ -12,15 +12,9 @@
 
 选择无引擎载体是为了让你把注意力放在工具链不变量上。完成后再将同一张输入/输出表迁移到 Unity 或 UE。
 
-## 与主项目的交付边界
+## 本课程实践边界
 
-本实践的完成结果不是“把 Python 房间生成器复制到 Unity”，而是交付一份可被主项目复用的**运行上下文契约**：`contentVersion`、`buildId`、`seed`、`runId` 和 `schemaVersion`。先在本练习中证明它们能让失败可复现，再在 Unity 中写薄适配层。完整字段、所有权和验收见 [`integration-contract.md`](integration-contract.md)。
-
-```text
-课程小程序（验证确定性）
-        ↓ 导出字段与回归证据
-Unity RogueSlice（消费契约，不共享 Python 内部状态）
-```
+这个项目只验证工具链、Git、确定性、构建证据和故障定位，不承担接入最终游戏的职责。最终交付是一份可在另一台机器复现的命令行小游戏工程，包含固定 seed、测试、构建 manifest、CI 思路和回滚证据。
 
 ## 环境与代码入口
 
@@ -33,11 +27,21 @@ Unity RogueSlice（消费契约，不共享 Python 内部状态）
 - [`tests/test_game.py`](code/repro-game/tests/test_game.py)：确定性、性质和边界测试；
 - [`Makefile`](code/repro-game/Makefile)：统一入口。
 
+## 分阶段指导
+
+- 阶段 0：在隔离副本中观察 Git 工作区、暂存区和本地提交；
+- 阶段 1：实现并测试固定 seed 的房间生成；
+- 阶段 2：冷构建、生成 manifest、运行产物并用 `git bisect` 定位故意回归。
+
+## Git 隔离
+
+先从仓库根目录执行 `python3 scripts/init_practice.py --course toolchain-and-git`，再执行 `git check-ignore -v .practice/toolchain-and-git` 和 `git status --short --untracked-files=all`。预期命中 `.gitignore` 且主仓库不显示个人文件。不要直接编辑 `knowledge-sets/toolchain-and-git/code/`，不要使用 `git add -f`，不要在仓库根目录运行 `git clean -fdx`。
+
 ## 里程碑 0：先用 Git 管住一次小改动
 
 ### 任务
 
-1. 从最新主线创建 `practice/toolchain-seeded-room` 分支；
+1. 在 `.practice/toolchain-and-git/` 内创建个人副本；若需要练习 Git，在该副本内单独 `git init`，不要给外层教材仓库创建实践分支；
 2. 运行现有测试，确认基线通过；
 3. 只修改 README 或一条测试说明，使用 `git status`、`git diff`、`git add -p` 和 `git diff --cached` 观察三个状态；
 4. 创建一个单一目的提交，并用 `git show --stat HEAD` 检查；
@@ -135,14 +139,9 @@ git bisect reset
 
 如果某个提交不能判定，使用 `git bisect skip` 并在口头解释中说明结论范围变宽。
 
-## 导出到 Unity 的最小验收
+## 课程实践的最小版本
 
-不需要完成完整 Unity 房间系统。只做一个薄适配器或测试入口，满足：
-
-- 调试启动能显式注入 seed，并在日志中打印 `buildId + contentVersion + seed + runId`；
-- 改变 `runId` 不改变规则结果；
-- 删除 Unity `Library/` 后，契约仍可从版本化源文件和显式参数恢复；
-- 至少有一个固定 seed 回归能从主项目日志追溯到本课程的最小复现。
+本实践不要求创建 Unity/Unreal 接缝；如果以后在引擎课程中复用构建证据，应重新按照那个课程的边界设计适配器。
 
 ## 时间不足的最小版本
 
@@ -202,7 +201,7 @@ git bisect reset
 
 ## 下载实践代码
 
-本页负责学习：题面、提示、解题路线、验收和失败诊断都直接在网站阅读。你也可以从课程页的“下载实践代码”入口取得整理好的代码包；ZIP 只包含可运行的 `code/repro-game/`、测试、构建入口和 `contracts/` 接入契约，不重复打包本页和折叠答案。
+本页负责学习：题面、提示、解题路线、验收和失败诊断都直接在网站阅读。你也可以从课程页的“下载实践代码”入口取得整理好的代码包；ZIP 只包含可运行的 `code/repro-game/`、测试和构建入口，不重复打包本页和折叠答案。
 
 下载后先进入包内的 `reference/code/repro-game/`，运行：
 
@@ -211,4 +210,4 @@ python3 -m unittest discover -s tests -v
 python3 src/game.py --seed 42
 ```
 
-包内代码是公开参考基线，不代表唯一解法。它不包含 `dist/`、缓存、个人练习状态、日志、密钥或用户绝对路径；复制到自己的 `RogueSlice` 时只迁移契约规定的输入/输出，不要直接覆盖 Unity 项目。
+包内代码是公开参考基线，不代表唯一解法。它不包含 `dist/`、缓存、个人练习状态、日志、密钥或用户绝对路径；实践时只编辑 `.practice/toolchain-and-git/` 或仓库外副本，不要直接修改教材源文件。
