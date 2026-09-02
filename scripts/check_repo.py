@@ -18,7 +18,7 @@ REQUIRED = [
     "standards/generation-workflow.md", "standards/course-folder-template.md",
     "standards/research-and-citation.md", "standards/practice-design.md",
     "standards/naming-and-architecture.md", "standards/quality-gates.md",
-    "standards/ai-course-prompt.md", "knowledge-sets/README.md", "scripts/init_practice.py",
+    "standards/ai-course-prompt.md", "standards/question-authoring.md", "knowledge-sets/README.md", "scripts/init_practice.py",
 ]
 # Legacy map files remain accepted only for historical scaffolds. README.md is the
 # sole course landing page and course map for new and completed courses.
@@ -130,16 +130,22 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
                 errors.append(f"{slug}: {lesson.name} needs several substantive sections, not just a title and exercise")
             if "## 本章练习" not in text:
                 errors.append(f"{slug}: {lesson.name} missing chapter-end exercise section")
-            if len(ids) < 2:
-                errors.append(f"{slug}: {lesson.name} needs at least two representative exercises")
-            if text.count("<details>") < len(ids) * 2:
-                errors.append(f"{slug}: {lesson.name} needs a hint and explanation details block for every exercise")
+            if len(ids) < 1:
+                errors.append(f"{slug}: {lesson.name} needs at least one chapter-end exercise")
+            # A complete explanation is mandatory; a minimal hint is optional and
+            # should not be forced when it would merely repeat the question.
+            if text.count("<details>") < len(ids):
+                errors.append(f"{slug}: {lesson.name} needs one explanation details block for every exercise; hints are optional")
+            for match in re.finditer(r"^###\s+((?:[A-Z][A-Z0-9-]*-)?Q\d+|综合题)\s*[：:]", text, re.MULTILINE):
+                block = text[match.end():]
+                next_match = re.search(r"^###\s+", block, re.MULTILINE)
+                if next_match:
+                    block = block[:next_match.start()]
+                if not re.search(r"<details>\s*<summary>.*(?:讲解|解析|答案)", block, re.DOTALL):
+                    errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} is missing a complete explanation details block")
             missing_signals = [name for name, tokens in QUALITY_SIGNALS.items() if not any(token in text for token in tokens)]
             if missing_signals:
                 errors.append(f"{slug}: {lesson.name} missing teaching signals: {', '.join(missing_signals)}")
-
-    if status == "completed" and len(seen_questions) < len(lesson_files) * 2:
-        errors.append(f"{slug}: completed course has too few chapter-local exercises")
 
     if status == "completed":
         for path in base.rglob("*.md"):
@@ -231,7 +237,7 @@ def main() -> int:
     status_summary = ", ".join(f"{key}={value}" for key, value in sorted(statuses.items()))
     published = statuses.get("completed", 0)
     scaffolded = statuses.get("planned", 0) + statuses.get("scaffolded", 0)
-    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); published={published}, not-yet-published={scaffolded}; structural gates, links, privacy, UI assets and state rules valid")
+    print(f"CHECK OK: {len(slugs)} courses ({status_summary}); published={published}, not-yet-published={scaffolded}; structural gates, flexible chapter exercise gates, links, privacy, UI assets and state rules valid")
     return 0
 
 

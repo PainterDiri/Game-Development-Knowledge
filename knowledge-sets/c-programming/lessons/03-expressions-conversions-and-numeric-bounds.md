@@ -175,4 +175,19 @@ bool nearly_equal(double a, double b, double abs_eps, double rel_eps) {
 整数版可写 `current * 100 / maximum`，但要先保证 `maximum != 0` 并防止乘法溢出；可提升到更宽类型。浮点版写 `(float)current / (float)maximum * 100.0f`，能表示小数但有舍入误差。测试 0、1/2、等于最大值和接近上限。游戏映射：血条显示可用浮点比率，权威资源结算通常更适合有明确舍入规则的整数。
 </details>
 
+### C03-Q3：优先级不等于求值顺序
+
+下面代码试图从两个连续位置取值并推进索引：
+
+```c
+int total = values[i++] + values[i++];
+```
+
+请判断这段代码是否有可移植的确定结果，指出风险来自哪里，再给出一个更容易审查的改写。
+
+<details><summary>讲解与验证</summary>
+
+加法的语法分组由运算符优先级决定，但两个 `i++` 之间没有足够的顺序关系；同一个标量在一个完整表达式中被多次修改而没有序列点，程序触及未定义行为，不能从一次运行结果推断规则。改成 `size_t left = i; size_t right = i + 1; i += 2; int total = values[left] + values[right];`，并先证明 `i + 1 < count` 不溢出且索引有效。边界是 `count` 小于 2、`i` 接近 `SIZE_MAX` 以及读取与推进分到不同阶段后的失败路径；常见错误是只加括号就以为改变了求值顺序。验证可用 `-Wall -Wextra`、Sanitizer 和 count=0/1/2 的测试。游戏映射：输入游标、伤害事件队列和 RNG 消费若把副作用藏在表达式中，会破坏重放和调试的可解释性。
+</details>
+
 下一章把表达式放入分支和循环，并用不变量证明每次状态更新都留在合法范围。

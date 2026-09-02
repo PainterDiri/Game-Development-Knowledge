@@ -160,6 +160,7 @@ nav:
       - 规范入口: standards/README.md
       - 内容质量规范: standards/knowledge-generation-spec.md
       - 课程生成流程: standards/generation-workflow.md
+      - 章末出题人规范: standards/question-authoring.md
       - 文件职责与可变结构: standards/course-folder-template.md
       - 研究与引用: standards/research-and-citation.md
       - 实践设计: standards/practice-design.md

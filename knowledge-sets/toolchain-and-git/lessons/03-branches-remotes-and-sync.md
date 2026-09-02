@@ -2,6 +2,11 @@
 
 分支（branch）不是项目的另一份完整复制。它主要是一个指向提交的可移动名字。你在分支上提交时，该名字向新提交移动。
 
+## 机制
+
+分支、远端分支和 `HEAD` 都是指向提交对象的引用；`fetch` 更新本地记录的远端引用，`switch` 更新当前工作区，`merge`/`rebase` 产生或重放历史，`push` 才请求远端引用移动。理解“哪个引用移动、哪个文件改变”是安全协作的核心。
+
+
 ```text
 A---B---C  main
          \
@@ -152,16 +157,15 @@ git log --oneline --decorate --graph --all
 `git fetch origin` 更新 `origin/main` 和对象，不改工作区；`pull --ff-only` 只有可直接前移才整合；`pull --rebase` 会重放未共享提交、改变提交 ID。用 `git log --graph --all` 验证。force-with-lease 只在个人未共享分支且团队允许时使用。游戏映射：构建分支要知道自己基于哪个提交。
 </details>
 
-### T03-Q2：把证据写出来
+### T03-Q2：非快进 push 前如何保护本地工作
 
-请为本章主题列出一个最小可执行验证，并说明预期结果和失败后的下一步。
+远端 `main` 已前进，你的 `feature/wave` 也有两个本地提交。直接 `git push` 被拒绝。请给出一种保留双方历史的整合方案，并说明为什么不能先强制推送。
 
 <details><summary>最小提示</summary>
-
-不要只写“运行一下”；写出输入、命令、观察对象和判定条件。
+先获取远端信息，再在 feature 分支整合 `origin/main`，最后检查提交图和测试。
 </details>
 
 <details><summary>讲解与验证</summary>
 
-合格验证应固定输入并记录命令、退出码、变更的 Git 状态或构建产物；预期结果必须可观察，失败时能缩小到一个阶段或不变量。若结果受时间、网络、缓存或未提交工作影响，应先隔离这些变量。常见错误是只看屏幕上的成功文字，不检查退出码、diff、artifact 或清理后重建。游戏映射：工程质量来自可重复证据，而不是一次“看起来能跑”。
+可执行方案是 `git fetch origin`，确认当前在 `feature/wave` 后选择 `git rebase origin/main` 或 `git merge origin/main`；解决冲突并运行测试后，再普通 `git push origin feature/wave`。rebase 会重写本地两个提交的身份，若该分支已经被别人基于它开发，应改用 merge 或先沟通；无论哪种方案，都要用 `git log --graph --oneline --decorate --all` 和 `git diff origin/main...HEAD` 验证变更范围。边界是远端分支保护和协作者共享历史，`git push --force` 可能覆盖别人刚推送的提交；常见错误是把本地 `main` 当成远端最新状态。游戏映射：多人同时改输入、敌人配置或资产索引时，先同步再整合可以把冲突留在可审查的功能分支，而不是直接污染集成分支。
 </details>
