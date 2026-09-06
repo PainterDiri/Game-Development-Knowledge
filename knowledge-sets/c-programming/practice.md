@@ -23,8 +23,8 @@ cd .practice/c-programming/runtime-kit
 
 - C17 编译器：Clang 或 GCC；
 - Make；
-- 不依赖第三方库；
-- 最小文件：`include/rg_runtime.h`、`rg_runtime.c`、`arena.c`、`test_runtime.c`、`Makefile`。
+- C 程序不依赖第三方库；CLI 集成测试另需 Python 3.9+（仅标准库）；
+- 规则模块：`include/rg_runtime.h` 与 `rg_runtime.c`；输入模块：`include/rg_cli.h` 与 `rg_cli.c`；入口：`arena.c`；测试：`test_runtime.c`、`test_cli.c`、`test_arena.py`；构建：`Makefile`。
 
 先验证参考基线：
 
@@ -34,6 +34,20 @@ make test
 make asan
 printf 'wave 2\nstatus\nhit 0 99\nenemy\nstatus\nquit\n' | ./arena --seed 42
 ```
+
+## 先独立做，再查参考
+
+下载包角色是 `reference-code`，不是留空的作业。先运行基线理解入口；随后在个人副本内保留测试，独立重写一个函数，再与参考比较。不要把原样运行参考代码算作已经会实现。本实践的最小版本覆盖固定数组、状态、解析和错误契约；动态内存、文件持久化与函数指针等能力还需要对应章节的独立验证，不能由这个固定数组项目一并证明。
+
+## 明确的规则契约
+
+- 先调用 `rg_runtime_init`，之后由规则函数修改状态；公开结构体方便教学观察，不是任意损坏内存都能恢复的安全边界。测试中的人工字段修改仅用于指定边界 fixture。
+- 单线程调用；有效指针必须指向活着的正确类型对象；输出对象不得与运行时内部状态重叠。输入校验不能证明任意非空地址有效。
+- 玩家存活时 `wave 0` 成功但不改变波次、RNG 或敌人；正数量波次成功后编号加一；容量不足和 ID 空间不足均失败且不改状态。
+- 死亡敌人保留在数组，占用槽位；`enemy_count` 是已创建记录数，不是存活数。这个基线最多保存 32 个敌人记录，不支持无限刷怪。
+- 零伤害不改变活敌人；对已经死亡的敌人再次命中成功并返回 `defeated=true`；玩家死亡后 `wave/hit/enemy` 都拒绝，查询仍可用。
+- seed 0 映射到固定非零初始状态；同版本算法、同 seed 和同命令顺序可复现。教学 RNG 的取模有偏差，不用于密码学，也不作为公平抽样的完整实现。
+- checksum 只作快速诊断，不是唯一状态身份或防作弊校验。失败测试还要逐字段比较，不比较结构体填充字节。
 
 ## 分阶段指导
 
@@ -65,13 +79,13 @@ typedef struct {
 
 ### 阶段 2：实现确定性生成和失败原子性
 
-`rg_runtime_spawn_wave` 先检查剩余容量，再生成。参考实现把 RNG 状态复制到局部变量，全部成功后才提交回运行时；这样未来若加入更多可能失败的校验，拒绝请求不会偷偷消耗随机数。
+`rg_runtime_spawn_wave` 先检查剩余容量，再生成。参考实现把 RNG 状态复制到局部变量，全部成功后才提交回运行时；当前循环内没有失败分支，所以所有可失败检查都在写入前完成。仅复制 RNG 不会自动保护敌人数组：未来若在生成中增加分配或资源加载失败，必须把整批候选敌人也暂存，全部成功后一次提交，否则会留下半批敌人。
 
 至少测试：0 个、1 个、恰好填满、超过容量、相同 seed、不同 seed。不要用当前时间作为规则 seed；可以在 CLI 入口生成随机 seed，但必须打印实际值。
 
 ### 阶段 3：实现攻击、位标志和输出参数
 
-`rg_runtime_hit_enemy(runtime, index, damage, &defeated)` 用返回值表示调用是否成功，用 `out_defeated` 返回业务结果。检查顺序应是空指针/负伤害 → 索引 → 修改敌人 → 最后写输出。失败时输出保持调用前的值。
+`rg_runtime_hit_enemy(runtime, index, damage, &defeated)` 用返回值表示调用是否成功，用 `out_defeated` 返回业务结果。检查顺序应是空指针/负伤害 → 游戏结束 → 索引 → 修改敌人 → 最后写输出。失败时输出保持调用前的值。
 
 死亡使用 `RG_ENEMY_ALIVE` 位标志；精英用另一位。练习组合、检查与清除：
 
@@ -82,7 +96,7 @@ if ((enemy->flags & RG_ENEMY_ELITE) != 0u) { /* ... */ }
 
 ### 阶段 4：实现 CLI 输入边界
 
-`fgets` 读取整行，`sscanf` 或 `strtol/strtoul` 解析。至少支持：
+使用第 8 章的“整行读取 → 候选命令 → 领域执行”。参考 `rg_read_line` 用 `fgetc` 恢复物理行边界，`rg_parse_command` 用 `strtoumax` 检查数字和类型范围。至少支持：
 
 ```text
 wave N
@@ -92,7 +106,7 @@ status
 quit
 ```
 
-为过长行、负数、非法 seed、越界索引和未知命令给出明确消息。进阶版应优先使用 `strtol` 系列并检查 `errno`、结束指针和范围，不要依赖 `atoi` 的静默失败。
+为过长行、负数、非法 seed、越界索引和未知命令给出明确消息。这不是进阶选项，而是最小版本的输入契约：拒绝 `wave 3x`、`statusx`、多余参数和 NUL；超长行必须丢弃到换行/EOF，不执行前缀；下一条合法命令仍可执行。
 
 ### 阶段 5：加入存档（拓展，但建议完成）
 
@@ -132,12 +146,12 @@ make asan
 printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-a.txt
 printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-b.txt
 diff -u run-a.txt run-b.txt
-git check-ignore -v ../../.practice/c-programming 2>/dev/null || true
 ```
 
-从仓库根目录再运行：
+上面的命令仍在个人副本中。回到主仓库根目录（从 `.practice/c-programming/runtime-kit` 可用 `cd ../../..`），再运行：
 
 ```bash
+git check-ignore -v .practice/c-programming
 git status --short --untracked-files=all
 ```
 

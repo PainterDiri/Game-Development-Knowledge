@@ -14,4 +14,4 @@ run: build
 	$(PYTHON) dist/game.py --seed $(SEED)
 
 clean:
-	$(PYTHON) -c "import shutil; shutil.rmtree('dist', ignore_errors=True)"
+	$(PYTHON) src/build.py --output dist --clean

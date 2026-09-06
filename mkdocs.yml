@@ -158,6 +158,7 @@ nav:
   - 维护与规范:
       - 网站发布: publishing.md
       - 规范入口: standards/README.md
+      - 教学覆盖与证据: standards/teaching-evidence.md
       - 内容质量规范: standards/knowledge-generation-spec.md
       - 课程生成流程: standards/generation-workflow.md
       - 章末出题人规范: standards/question-authoring.md

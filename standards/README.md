@@ -10,6 +10,8 @@
 4. [实践设计](practice-design.md)：每课一个主实践及 Git 隔离；
 5. [质量门禁](quality-gates.md)：何时能标记为完成。
 
+6. [教学覆盖与证据规范](teaching-evidence.md)：专业覆盖、渐进教学、迁移题、可复现实验与诚实审查。
+
 ## 按需查阅
 
 - [文件职责与可变结构](course-folder-template.md)

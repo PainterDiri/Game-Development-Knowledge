@@ -117,14 +117,15 @@ Build/Windows/ | 产物 | 是但可再生 | CI | 发布周期 | 通常否 | 下�
 在课程实践目录运行：
 
 ```bash
-cd code/repro-game
+# 从教材仓库根目录开始，先按主实践初始化过个人副本
+cd .practice/toolchain-and-git/repro-game
 python3 -m unittest discover -s tests -v
-rm -rf dist
+python3 src/build.py --output dist --clean
 python3 src/build.py --output dist --seed 42 --version 1.0.0
 cat dist/build-manifest.json
 ```
 
-如果 `dist/` 删除后仍能由 `src/` 生成，说明实践项目至少把源和产物分开了。下一章会继续问：工具、时间、随机和依赖是否也被显式化。
+清理命令只删除构建器识别出的产物，遇到未知文件会拒绝；不要换成递归强删。目录与命令起点见[主实践](../practice.md)。如果已识别的 `dist/` 清理后仍能由 `src/` 生成，说明实践项目至少把源和产物分开了。下一章会继续问：工具、时间、随机和依赖是否也被显式化。
 
 ## 6.7 动手：从目录树反推工程边界
 

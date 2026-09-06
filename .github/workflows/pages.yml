@@ -36,6 +36,14 @@ jobs:
       - name: Validate repository
         run: python scripts/check_repo.py
 
+      - name: Test repository checker
+        run: python -m unittest discover -s scripts/tests -v
+
+      - name: Test published reference projects in temporary copies
+        env:
+          CC: clang
+        run: python scripts/test_reference_code.py --bundles --sanitize
+
       - name: Build MkDocs site
         run: mkdocs build --strict
 

@@ -5,7 +5,7 @@
 ## 14.1 测试分层
 
 - **单元测试**：固定输入验证一个函数或模块的规则；快，失败定位窄；
-- **性质/不变量测试**：验证任意 seed、容量或序列都满足约束；发现边界更强；
+- **性质/不变量测试**：对实际枚举或生成的 seed、容量、序列检查约束；可发现样例遗漏，但有限测试不证明任意输入都成立；
 - **集成测试**：验证多文件、文件格式、CLI 和构建入口；
 - **冒烟测试**：从用户入口启动，确认最小可用路径；
 - **Sanitizer 运行**：在测试路径上寻找地址和 UB 错误。
@@ -58,6 +58,8 @@ Unity/UE 适配时，C 核心只暴露稳定标量、快照或句柄；引擎层
 失败的超容量请求前后 checksum 相同
 同 seed + 同命令序列得到同 checksum
 ```
+
+这些是需要验证的性质声明，不是已经完成的全称证明。失败原子性的测试应逐字段比较 RNG、计数、生命、波次和敌人记录；checksum 可能碰撞，只作为快速诊断。也不能直接 `memcmp` 整个结构体，因为填充字节可能与业务状态无关。
 
 样例仍然需要：`n=0`、`n=1`、恰好容量、超过容量、NULL、最大伤害。性质和边界互相补足；只写一个“seed=42 的黄金输出”会把实现细节误当规则，过度依赖黄金文件也会让合理重构难以进行。
 
@@ -129,6 +131,6 @@ Unity 适配器：MonoBehaviour/输入事件 → 领域命令；快照 → 表�
 
 ## 课程总验收
 
-从课程根目录把参考代码复制到 `.practice/c-programming/`，只编辑副本；运行 `make clean all`、`make test`、`make asan` 和固定 seed CLI。能解释每一条命令的输入、输出、状态改变、失败恢复和 Git 隔离，才算完成本课程，而不是只看到“编译成功”。
+从主仓库根目录按实践页初始化参考代码副本到 `.practice/c-programming/`，只编辑副本；运行 `make clean all`、`make test`、`make asan` 和固定 seed CLI。能解释每一条命令的输入、输出、状态改变、失败恢复和 Git 隔离，才算完成本课程，而不是只看到“编译成功”。
 
 > 资料依据：[WG14 N1570 公开草案](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)（访问日期：2026-09-01）；[GCC Warning Options](https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html) 与 [Clang AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)（访问日期：2026-09-01）。用于语言边界、诊断开关和工具能力说明；具体编译器版本可能改变警告细节。

@@ -17,6 +17,10 @@
 - 公开代码有运行方式，下载包可解压且不含缓存、个人状态、秘密或绝对路径；
 - Markdown 链接、MkDocs 严格构建、`sync_docs.py`、`check_repo.py` 和 `git diff --check` 通过。
 
+自动检查只能发现可机械判断的问题；字数、标题数量和关键词只是薄弱内容预警，不能作为“已讲透”的证据。发布前须运行参考代码回归（`python3 scripts/test_reference_code.py`）和校验器测试（`python3 -m unittest discover -s scripts/tests -v`）。
+
+`make check` 已包含上述两组回归以及文档门禁；参考项目使用 `--bundles` 从新生成并解压的下载包执行，以发现漏打包文件，需要 Python、Make 与 C17 编译器；首次使用先 `make install`。`make check-code-sanitize` 额外运行 ASan/UBSan，要求编译器和平台支持。Pages 发布流程同样执行参考代码的普通测试与 Sanitizer 测试，任一步失败均不进入发布。仅编写或预览文档时仍可使用 `make docs-build`，但这不能替代完整验收。
+
 ## 人工门禁
 
 ### 教材深度
@@ -25,7 +29,7 @@
 - 核心难点获得足够篇幅，代码关键行解释了输入、输出和状态变化；
 - 章节之间有因果链，未解释术语、命令和 API 已补桥；
 - Git 命令逐条说明改变哪个状态、何时危险、如何验证和恢复；
-- D3 课程不少于 12 个连续知识单元，且内容密度而非页面数满足深度。
+- D3 课程的核心能力覆盖表没有未落实项；页数、字数和标题数量不能证明专业深度。
 
 ### 求知者验收
 
@@ -40,7 +44,7 @@
 - 课程不被迫接入最终主项目，完整项目只在专门课程推进；
 - 公开 `code/` 被明确标为只读；学习者编辑的是 `.practice/<slug>/` 或仓库外副本；
 - 已解释 `.gitignore` 不保护已跟踪文件、`git add -f` 可绕过忽略、`git clean -fdx` 会删除个人实践；
-- 实践验收包含 `git check-ignore` 与主仓库 `git status` 为空的证据。
+- 实践验收包含有效的 `git check-ignore` 与主仓库 `git status` 前后比较；不要求抹掉任务开始前已有的其他改动，不得用 `|| true` 隐藏隔离检查失败。
 
 ### 正确性、来源和发布
 

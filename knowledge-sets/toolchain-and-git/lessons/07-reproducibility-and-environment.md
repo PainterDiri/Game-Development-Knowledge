@@ -138,16 +138,23 @@ room = generate_room(room_rng)
 ## 本章实验：两次冷构建
 
 ```bash
-cd code/repro-game
-rm -rf dist /tmp/repro-a /tmp/repro-b
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-a
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-b
-diff -ru /tmp/repro-a /tmp/repro-b
+# 从教材仓库根目录开始，先按主实践初始化过个人副本
+cd .practice/toolchain-and-git/repro-game
+(
+  set -eu
+  compare_dir=$(mktemp -d)
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/a"
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/b"
+  diff -ru "$compare_dir/a" "$compare_dir/b"
+  printf '比对快照保留在 %s\n' "$compare_dir"
+)
 ```
 
-预期没有差异。然后分别改变 seed、版本和源码，观察哪些 manifest 字段改变。若两次相同输入出现差异，先查时间、路径、排序和随机，不要直接声称“Python 不可复现”。
+子 shell、临时目录、清理拒绝的处理方式见[主实践](../practice.md)；快照只放到本次新建目录，不覆盖固定临时文件。两轮各自先清理，避免把第二轮误算成冷构建。预期没有差异。然后分别改变 seed、版本和源码，观察哪些 manifest 字段改变。若两次相同输入出现差异，先查时间、路径、排序和随机，不要直接声称“Python 不可复现”。
 
 ## 本章结论
 
@@ -189,14 +196,15 @@ diff -ru /tmp/repro-a /tmp/repro-b
 实验 4：只把目标改成 windows-x64
 ```
 
-每次只改变一个输入，并记录：输出哈希、行为结果、manifest 差异和退出码。一个简易 shell 骨架如下：
+每次只改变一个输入，并记录：输出哈希、行为结果、manifest 差异和退出码。一个简易 shell 骨架如下（Linux 使用 `sha256sum`；macOS 可把它替换为 `shasum -a 256`）。每个子产物单独清理，不让未知目录被父目录递归删除：
 
 ```bash
 set -eu
 for seed in 42 43; do
-  rm -rf "out-$seed"
-  python3 src/build.py --output "out-$seed" --seed "$seed" --version 1.0.0
-  sha256sum "out-$seed/game.py" "out-$seed/build-manifest.json"
+  python3 src/build.py --output "dist/out-$seed" --clean
+  python3 src/build.py --output "dist/out-$seed" --seed "$seed" --version 1.0.0
+  sha256sum "dist/out-$seed/game.py" "dist/out-$seed/build-manifest.json"
+  python3 src/build.py --output "dist/out-$seed" --clean
 done
 ```
 

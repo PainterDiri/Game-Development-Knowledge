@@ -18,7 +18,7 @@ REQUIRED = [
     "standards/generation-workflow.md", "standards/course-folder-template.md",
     "standards/research-and-citation.md", "standards/practice-design.md",
     "standards/naming-and-architecture.md", "standards/quality-gates.md",
-    "standards/ai-course-prompt.md", "standards/question-authoring.md", "knowledge-sets/README.md", "scripts/init_practice.py",
+    "standards/teaching-evidence.md", "scripts/test_reference_code.py", "standards/ai-course-prompt.md", "standards/question-authoring.md", "knowledge-sets/README.md", "scripts/init_practice.py",
 ]
 # Legacy map files remain accepted only for historical scaffolds. README.md is the
 # sole course landing page and course map for new and completed courses.
@@ -119,15 +119,15 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
     for lesson in lesson_files:
         text = read_text(lesson)
         ids = QUESTION_ID_RE.findall(text)
-        duplicates = sorted(qid for qid in ids if qid in seen_questions)
+        duplicates = sorted({qid for qid, count in Counter(ids).items() if count > 1 or qid in seen_questions})
         if duplicates:
             errors.append(f"{slug}: duplicate question IDs in {lesson.name}: {', '.join(duplicates)}")
         seen_questions.update(ids)
         if status == "completed":
             if len(text) < MIN_LESSON_CHARS:
-                errors.append(f"{slug}: {lesson.name} is too thin for a completed lesson ({len(text)} chars; needs at least {MIN_LESSON_CHARS})")
+                print(f"REVIEW WARNING: {slug}/{lesson.name} has only {len(text)} chars; inspect teaching coverage, do not pad to a quota")
             if len(re.findall(r"^##\s+", text, re.MULTILINE)) < MIN_LESSON_HEADINGS:
-                errors.append(f"{slug}: {lesson.name} needs several substantive sections, not just a title and exercise")
+                print(f"REVIEW WARNING: {slug}/{lesson.name} has few sections; inspect its reasoning structure, do not add filler headings")
             if "## 本章练习" not in text:
                 errors.append(f"{slug}: {lesson.name} missing chapter-end exercise section")
             if len(ids) < 1:
@@ -141,17 +141,65 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
                 next_match = re.search(r"^###\s+", block, re.MULTILINE)
                 if next_match:
                     block = block[:next_match.start()]
-                if not re.search(r"<details>\s*<summary>.*(?:讲解|解析|答案)", block, re.DOTALL):
+                details = re.findall(r"<details>\s*<summary>([^<]*)</summary>(.*?)</details>", block, re.DOTALL)
+                has_answer = any(re.search(r"讲解|解析|答案", summary) and body.strip()
+                                 for summary, body in details)
+                if not has_answer:
                     errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} is missing a complete explanation details block")
             missing_signals = [name for name, tokens in QUALITY_SIGNALS.items() if not any(token in text for token in tokens)]
             if missing_signals:
-                errors.append(f"{slug}: {lesson.name} missing teaching signals: {', '.join(missing_signals)}")
+                print(f"REVIEW WARNING: {slug}/{lesson.name} missing keyword signals: {', '.join(missing_signals)}; verify actual teaching rather than adding keywords")
 
     if status == "completed":
         for path in base.rglob("*.md"):
             markers = [m for m in COMPLETION_MARKERS if m in read_text(path)]
             if markers:
                 errors.append(f"{slug}: completed file contains scaffold markers in {path.relative_to(base)}: {', '.join(markers)}")
+
+
+def check_prerequisites(errors: list[str], courses: list[dict]) -> None:
+    by_slug = {c.get("slug"): c for c in courses}
+    orders = [c.get("order") for c in courses]
+    if any(type(order) is not int or order < 0 for order in orders):
+        errors.append("course orders must be non-negative integers")
+    elif len(set(orders)) != len(orders) or orders != sorted(orders):
+        errors.append("course orders must be unique and monotonic")
+    graph = {}
+    for course in courses:
+        slug = course.get("slug")
+        dependencies = course.get("prerequisites")
+        if not isinstance(dependencies, list) or any(not isinstance(d, str) for d in dependencies):
+            errors.append(f"{slug}: prerequisites must be a list of course slugs")
+            graph[slug] = []
+            continue
+        graph[slug] = dependencies
+        if len(set(dependencies)) != len(dependencies):
+            errors.append(f"{slug}: duplicate prerequisites")
+        for dependency in dependencies:
+            if dependency not in by_slug:
+                errors.append(f"{slug}: unknown prerequisite {dependency}")
+            elif dependency == slug:
+                errors.append(f"{slug}: cannot depend on itself")
+            elif type(course.get("order")) is int and type(by_slug[dependency].get("order")) is int:
+                if by_slug[dependency]["order"] >= course["order"]:
+                    errors.append(f"{slug}: prerequisite {dependency} must precede course order")
+    visiting, visited = set(), set()
+
+    def visit(slug):
+        if slug in visiting:
+            errors.append(f"prerequisite cycle involving {slug}")
+            return
+        if slug in visited:
+            return
+        visiting.add(slug)
+        for dependency in graph.get(slug, []):
+            if dependency in graph:
+                visit(dependency)
+        visiting.remove(slug)
+        visited.add(slug)
+
+    for slug in graph:
+        visit(slug)
 
 
 def main() -> int:
@@ -198,8 +246,7 @@ def main() -> int:
             if path.is_file() and path.name in FORBIDDEN_PUBLIC_STATE:
                 errors.append(f"{slug}: learner state must not be public: {path.relative_to(base)}")
 
-    if orders != sorted(orders):
-        errors.append("course orders are not monotonic")
+    check_prerequisites(errors, index.get("courses", []))
 
     link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
     for md in ROOT.rglob("*.md"):

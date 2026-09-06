@@ -26,7 +26,13 @@ void rg_runtime_init(RgRuntime *runtime, uint32_t seed) {
 RgResult rg_runtime_spawn_wave(RgRuntime *runtime, size_t count) {
     if (!runtime) return RG_ERR_INVALID_ARGUMENT;
     if (runtime->player_health <= 0) return RG_ERR_GAME_OVER;
+    if (runtime->enemy_count > RG_RUNTIME_MAX_ENEMIES) return RG_ERR_INVALID_ARGUMENT;
     if (count > RG_RUNTIME_MAX_ENEMIES - runtime->enemy_count) return RG_ERR_CAPACITY;
+
+    if (count == 0u) return RG_OK;
+    /* Reserve enough ID space for every slot in a possible full wave. */
+    if (runtime->wave_index >= (UINT32_MAX - (RG_RUNTIME_MAX_ENEMIES - 1u)) / 100u)
+        return RG_ERR_OUT_OF_RANGE;
 
     /* Work on a local RNG state so a rejected call never consumes randomness. */
     uint32_t next_state = runtime->rng_state;
@@ -55,6 +61,7 @@ RgResult rg_runtime_spawn_wave(RgRuntime *runtime, size_t count) {
 
 RgResult rg_runtime_hit_enemy(RgRuntime *runtime, size_t index, int damage, bool *out_defeated) {
     if (!runtime || !out_defeated || damage < 0) return RG_ERR_INVALID_ARGUMENT;
+    if (runtime->player_health <= 0) return RG_ERR_GAME_OVER;
     if (index >= runtime->enemy_count) return RG_ERR_OUT_OF_RANGE;
 
     RgEnemy *enemy = &runtime->enemies[index];

@@ -37,11 +37,20 @@
 
 先从仓库根目录执行 `python3 scripts/init_practice.py --course toolchain-and-git`，再执行 `git check-ignore -v .practice/toolchain-and-git` 和 `git status --short --untracked-files=all`。预期命中 `.gitignore` 且主仓库不显示个人文件。不要直接编辑 `knowledge-sets/toolchain-and-git/code/`，不要使用 `git add -f`，不要在仓库根目录运行 `git clean -fdx`。
 
+后文的命令均在个人副本 `repro-game` 中执行，不是教材的公开 `code/repro-game`。初始化成功后，从教材仓库根目录进入一次：
+
+```bash
+cd .practice/toolchain-and-git/repro-game
+git init
+```
+
+如果副本已存在，初始化脚本会拒绝覆盖；继续使用已有副本，不删除自己的成果。验收中的 `(...)` 是子 shell，`set -eu` 让该组命令在失败或未设置变量时停止，不改变外层 shell 选项；`mktemp -d` 新建独占临时目录，双引号防止路径中的空格被拆开。快照留在本机临时目录供检查，不使用或强删固定的共享 `/tmp` 文件名。`--clean` 若拒绝未知文件，应先检查、备份或移开；不能改成 `rm -rf` 绕过保护。两次构建之间也必须清理，才是两次冷构建。
+
 ## 里程碑 0：先用 Git 管住一次小改动
 
 ### 任务
 
-1. 在 `.practice/toolchain-and-git/` 内创建个人副本；若需要练习 Git，在该副本内单独 `git init`，不要给外层教材仓库创建实践分支；
+1. 进入 `.practice/toolchain-and-git/repro-game/` 个人副本，在这里单独 `git init`，不要给外层教材仓库创建实践分支；
 2. 运行现有测试，确认基线通过；
 3. 只修改 README 或一条测试说明，使用 `git status`、`git diff`、`git add -p` 和 `git diff --cached` 观察三个状态；
 4. 创建一个单一目的提交，并用 `git show --stat HEAD` 检查；
@@ -70,12 +79,16 @@ git show --stat HEAD
 ### 验收
 
 ```bash
-cd code/repro-game
 python3 -m unittest discover -s tests -v
 python3 src/game.py --seed 42
-python3 src/game.py --seed 42 > /tmp/run-a
-python3 src/game.py --seed 42 > /tmp/run-b
-diff -u /tmp/run-a /tmp/run-b
+(
+  set -eu
+  run_dir=$(mktemp -d)
+  python3 src/game.py --seed 42 > "$run_dir/a"
+  python3 src/game.py --seed 42 > "$run_dir/b"
+  diff -u "$run_dir/a" "$run_dir/b"
+  printf '本次运行输出保留在 %s\n' "$run_dir"
+)
 ```
 
 预期：测试通过，`diff` 无输出，运行结果包含 seed、checksum 和每个房间。
@@ -84,7 +97,7 @@ diff -u /tmp/run-a /tmp/run-b
 
 ### 任务
 
-1. 构建前删除 `dist/`；
+1. 构建前用构建器的 `--clean` 清理已识别的 `dist/`；遇到未知文件则停止检查，不递归强删；
 2. 从 `src/` 复制或生成产物；
 3. 计算源输入哈希；
 4. manifest 至少包含 schema、deterministic/provenance 分层、游戏版本、seed、提交、Python 版本、构建命令、输入哈希、目标和限制；
@@ -94,12 +107,18 @@ diff -u /tmp/run-a /tmp/run-b
 ### 验收
 
 ```bash
-rm -rf dist /tmp/repro-a /tmp/repro-b
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-a
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-b
-diff -ru /tmp/repro-a /tmp/repro-b
+(
+  set -eu
+  compare_dir=$(mktemp -d)
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/a"
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/b"
+  diff -ru "$compare_dir/a" "$compare_dir/b"
+  printf '比对快照保留在 %s\n' "$compare_dir"
+)
 python3 dist/game.py --seed 42
 git check-ignore -v dist/game.py
 ```
@@ -211,3 +230,9 @@ python3 src/game.py --seed 42
 ```
 
 包内代码是公开参考基线，不代表唯一解法。它不包含 `dist/`、缓存、个人练习状态、日志、密钥或用户绝对路径；实践时只编辑 `.practice/toolchain-and-git/` 或仓库外副本，不要直接修改教材源文件。
+
+## 构建与清理的安全验收
+
+参考 `src/build.py` 只允许当前实践项目的 `dist` 或其子目录作为输出；命令从个人副本的 `repro-game` 根目录执行。非空目标必须只有可识别的构建产物，未知文件、符号链接、源码目录和外部目录都会被拒绝。`make clean` 调用同一验证路径，只移除已识别文件，不递归删除任意目录。
+
+运行 `python3 -m unittest discover -s tests -v` 应包含 `test_build` 的 5 个安全回归与 `test_game` 的 4 个规则测试。安全回归只使用新建临时项目，不拿现有个人源码做删除试验。详细机制与迁移练习见[第 8 章](lessons/08-testing-building-and-diagnosis.md)。这是本地主动误用保护，不是多租户安全沙箱或事务性发布系统。

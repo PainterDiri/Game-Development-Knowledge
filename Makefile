@@ -2,7 +2,7 @@ VENV := .venv
 PYTHON := $(VENV)/bin/python
 MKDOCS := $(VENV)/bin/mkdocs
 
-.PHONY: install docs-sync docs-serve docs-build check clean-site practice-package
+.PHONY: install docs-sync docs-serve docs-build check check-code check-code-sanitize clean-site practice-package
 
 install:
 	python3 -m venv $(VENV)
@@ -17,7 +17,14 @@ docs-serve: docs-sync
 docs-build: docs-sync
 	$(MKDOCS) build --strict
 
-check: docs-sync
+check-code:
+	$(PYTHON) -m unittest discover -s scripts/tests -v
+	$(PYTHON) scripts/test_reference_code.py --bundles
+
+check-code-sanitize:
+	$(PYTHON) scripts/test_reference_code.py --bundles --sanitize
+
+check: docs-sync check-code
 	$(PYTHON) scripts/check_repo.py
 	git diff --check
 	$(MKDOCS) build --strict --site-dir /tmp/game-dev-knowledge-mkdocs-site

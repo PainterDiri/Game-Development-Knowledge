@@ -59,8 +59,11 @@ jobs:
       - run: python scripts/sync_docs.py
       - run: python scripts/check_repo.py
       - run: python3 -m unittest discover -s knowledge-sets/toolchain-and-git/code/repro-game/tests -v
-      - run: python3 knowledge-sets/toolchain-and-git/code/repro-game/src/build.py --output /tmp/repro-dist --seed 42
-      - run: python3 /tmp/repro-dist/game.py --seed 42
+      - run: |
+          cp -R knowledge-sets/toolchain-and-git/code/repro-game "$RUNNER_TEMP/repro-game"
+          cd "$RUNNER_TEMP/repro-game"
+          python3 src/build.py --output dist --seed 42
+      - run: python3 "$RUNNER_TEMP/repro-game/dist/game.py" --seed 42
 ```
 
 这段 YAML 不是通用版本承诺。真实 Unity/UE workflow 还需要 Editor/Engine 安装、平台模块、许可证、插件、LFS/Perforce、缓存键、并发、符号和平台矩阵。课程真正固定的是：CI 使用项目公开命令，并在失败时返回非零退出码和可下载证据。

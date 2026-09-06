@@ -162,18 +162,25 @@ git bisect reset
 ## 本章验收
 
 ```bash
-cd code/repro-game
+# 从教材仓库根目录开始，先按主实践初始化过个人副本
+cd .practice/toolchain-and-git/repro-game
 python3 -m unittest discover -s tests -v
-rm -rf dist /tmp/repro-a /tmp/repro-b
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-a
-python3 src/build.py --output dist --seed 42 --version 1.0.0
-cp -R dist /tmp/repro-b
-diff -ru /tmp/repro-a /tmp/repro-b
+(
+  set -eu
+  compare_dir=$(mktemp -d)
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/a"
+  python3 src/build.py --output dist --clean
+  python3 src/build.py --output dist --seed 42 --version 1.0.0
+  cp -R dist "$compare_dir/b"
+  diff -ru "$compare_dir/a" "$compare_dir/b"
+  printf '比对快照保留在 %s\n' "$compare_dir"
+)
 python3 dist/game.py --seed 42
 ```
 
-预期：测试通过、两次目录无差异、产物启动成功。然后在临时分支故意让 `seed=7, room=3` 缺少出口，观察失败消息是否足以支撑最小复现。
+子 shell、临时目录与安全清理的语法见[主实践](../practice.md)。预期：测试通过、两次目录无差异、产物启动成功。然后在临时分支故意让 `seed=7, room=3` 缺少出口，观察失败消息是否足以支撑最小复现。
 
 ## 8.8 把测试分层变成失败成本曲线
 
@@ -273,21 +280,39 @@ PY
 让一次故意失败同时具备：非零退出码、固定 seed/场景/房间、可读断言、可在干净 checkout 重复运行。然后列出该测试不能证明的两件事，避免把局部证据夸大成整机正确。
 
 
+## 8.12 构建工具也有输入边界：别让清理变成删源码
+
+曾经的参考实现直接对 `--output` 参数调用递归删除。正常运行 `--output dist` 看起来没有问题，但如果传入 `src`，构建器就可能先删除输入，再尝试复制已被删掉的文件。这里不能用“用户应该小心”替代实现契约。
+
+本版构建器限定输出为**实践项目内的 `dist` 或其子目录**，相对路径按当前工作目录解释，所以命令必须从个人副本的项目根目录执行。处理顺序如下：
+
+1. 确认源文件存在；
+2. 拒绝路径中的 `..` 和指向其他位置的符号链接；
+3. 确认目标位于约定的 `dist` 子树；
+4. 若目标非空，检查只有构建器拥有的两个普通文件，并且 manifest 标识可识别；
+5. 全部通过才写产物。清理只删除这两个已识别文件，最后删除空目录，不递归删除调用者指定路径。
+
+`game.py` 是构建后的程序；`build-manifest.json` 是输入身份、版本和构建方式的元数据。如果发现 `notes.txt`、未知子目录、符号链接或无法识别的 manifest，应拒绝，而不是猜测它们都是垃圾。首次构建接受不存在或空目录；只有已有且可识别的产物才允许覆盖。
+
+在新建的个人副本中做以下验证，不要向真实工作目录试验旧版危险脚本：
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 src/build.py --output dist --seed 42 --version 1.0.0
+python3 src/build.py --output src --seed 42 --version 1.0.0
+printf 'exit=%s\n' "$?"
+python3 src/build.py --output dist --clean
+```
+
+第二次构建命令应拒绝 `src`，退出码为 2；`src/game.py` 仍存在。`test_build.py` 使用临时假项目测试这些路径：正常重复构建、拒绝源码/外部目录、拒绝未知文件、拒绝符号链接、拒绝清理含多份子产物的父目录。每次都检查哨兵文件没变，而不只是检查“抛了异常”。
+
+`dist/a`、`dist/b` 可分别作为产物目录，但 `--clean dist` 不会递归删它们；要分别清理叶目录。若此前生成过旧格式产物，应先人工检查和备份，不能通过删除保护规则强行通过。
+
+这个边界只适用于本地可信开发环境：不提供抵御并发恶意替换目录的安全沙箱，也不提供写入两个文件的事务性发布。磁盘满时可能留下不完整产物；若缺少或损坏 manifest，下次构建也会拒绝。先检查并备份或移开该目录，再重新构建并验收，不能上传半包或去掉保护强行覆盖。真实发行要另行设计临时构建目录、校验和原子切换。游戏映射：Unity 构建脚本、资源转换器和服务器部署工具都必须区分“拥有的派生文件”与“不能删除的源码或数据”。
+
+> 资料依据：[Python `shutil` 官方文档](https://docs.python.org/3/library/shutil.html)（访问日期：2026-09-06），用于核对 `rmtree` 的递归删除与符号链接相关限制。这里的 `dist` 所有权策略是课程实现选择，不是 Python 自动提供的保护。
+
 ## 本章练习
-
-### T08-Q1：把失败缩成命令
-
-bisect 或 CI 需要一个什么样的测试入口？
-
-<details><summary>最小提示</summary>
-
-测试要稳定、可自动返回退出码、依赖固定输入。
-</details>
-
-<details><summary>讲解与验证</summary>
-
-入口应无交互、无当前时间/网络/脏缓存依赖，成功 0、失败非 0，并在失败时保留 seed、提交和日志。先单测再集成/冒烟，`git bisect run` 才有判定依据。常见错误是用人工观察或 flaky 测试二分。游戏映射：最小复现让偶现战斗回归可定位。
-</details>
 
 ### T08-Q2：把最小复现做成可自动判定入口
 
@@ -309,4 +334,15 @@ bisect 或 CI 需要一个什么样的测试入口？
 <details><summary>讲解与验证</summary>
 
 先固定 seed、输入规模、CPU/GPU 目标、并发度、缓存状态和时间限制，保存每次运行的分布与环境；再判断失败是超时、资源争用、未排序输出、真实数据竞争还是阈值过紧。重复运行和对照版本只能帮助定位，不能把“重试三次取一次成功”当成质量门禁，因为它会隐藏真实回归。验证应给出失败率、p50/p95 或稳定的行为断言，并在修复后连续冷/热运行。游戏映射：帧时间、加载时间和网络延迟测试必须区分噪声与退化，否则发布门禁会在真正事故前失去可信度。
+</details>
+
+### T08-Q4：拒绝不等于安全，必须检查没有副作用
+
+构建目标 `dist` 已有合法的 `game.py` 和 manifest，后来有人放入 `notes.txt`。你应自动删除笔记、覆盖程序、还是拒绝？设计一个测试，证明操作失败前没有先删掉任何文件。再解释为什么合法 manifest 不能作为对抗攻击者的权限凭证。
+
+<details><summary>讲解与验证</summary>
+
+应拒绝。构建器只拥有约定的派生产物，不拥有新出现的笔记。测试在临时项目先成功构建，记录两个产物字节，再加入内容为 `keep` 的笔记，调用构建或清理并要求失败，随后比较笔记和两个旧产物都仍存在且字节未变。只断言退出码不够：程序可能已经递归删除目录，然后才因为源文件丢失失败。
+
+边界包括空目录、未知子目录、符号链接和多个子产物目录。manifest 可以被复制或伪造，它只是可信本地环境里的归属检查，不是身份认证，也不能防止检查之后被另一个进程换掉路径。真实部署的信任模型必须另外设计。游戏映射：错误的资源清理和服务部署脚本可能比玩法 bug 更直接损坏资产，因此必须测“拒绝且无副作用”。
 </details>

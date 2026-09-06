@@ -42,6 +42,11 @@ typedef struct {
     uint32_t rng_state;
 } RgRuntime;
 
+/* Contract: initialize before use; single-threaded. Callers observe but do not
+   mutate fields. Valid output objects must not alias runtime storage.
+   Failed operations leave runtime and outputs unchanged. Dead slots are retained.
+   wave(0) is a no-op while alive. After player death, mutation is rejected.
+   Checksums are non-cryptographic diagnostics, not proofs of state equality. */
 void rg_runtime_init(RgRuntime *runtime, uint32_t seed);
 RgResult rg_runtime_spawn_wave(RgRuntime *runtime, size_t count);
 RgResult rg_runtime_hit_enemy(RgRuntime *runtime, size_t index, int damage, bool *out_defeated);
