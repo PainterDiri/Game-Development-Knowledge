@@ -18,12 +18,13 @@ int *p = &health;
 
 指针有效至少需要：指向正确类型、对象仍在生命周期内、访问权限允许、地址对齐满足要求。只要其中一项不成立，解引用就可能是未定义行为。
 
-## 9.2 四种常见 const 位置
+## 9.2 三种常见 const 位置
 
 ```c
-const int *read_only;   /* 不能通过该指针改 int，可改指针指向 */
-int *const fixed;       /* 指针不能改指向，可改 int */
-const int *const both;  /* 两者都不能通过该名字改 */
+int value = 20;
+const int *read_only = &value;   /* 不能通过该指针改 int，可改指针指向 */
+int *const fixed = &value;       /* 指针不能改指向，可改 int */
+const int *const both = &value;  /* 两者都不能通过该名字改 */
 ```
 
 `const int *` 是“借用只读视图”，不是深拷贝，也不阻止对象从其他别名被修改。接口用它表达“函数不应写输入”，调用者可以把可变 `int *` 传入。
@@ -100,6 +101,27 @@ memmove(text + 1, text, 4); /* 复制原来的 ABCD 到下标 1..4 */
 ## 9.8 输出参数与失败原子性
 
 带输出参数的函数应遵循“验证输入 → 用局部变量计算 → 成功末尾写输出”。例如解析或查询函数失败时，不要先把 `*out` 清零再返回错误，除非接口明确规定了这种副作用。这个顺序能让调用者保留旧状态，特别适合加载存档、结算伤害和生成波次。
+
+## 9.8 重叠移动与尾后指针的有定义观察
+
+保存为 `alias.c`，以 C17 编译运行，不带 `-DNDEBUG`，输出 `AABCD`。原数组有 6 个元素，终止 NUL 位于索引5且未移动；覆盖索引1–4以后仍是合法字符串。end 指向整个数组尾后位置，可以与同数组指针相减（差必须能用 ptrdiff_t 表示），不能解引用。这里不执行悬空指针、NULL 或不兼容类型读取等 UB 来猜答案。
+
+<!-- executable: alias.c -->
+```c
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+int main(void) {
+    char text[] = "ABCDE";
+    memmove(text + 1, text, 4u);
+    assert(strcmp(text, "AABCD") == 0);
+    const char *end = text + sizeof text;
+    assert(end - text == (ptrdiff_t)sizeof text);
+    puts(text);
+    return 0;
+}
+```
 
 ## 本章练习
 

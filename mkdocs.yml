@@ -145,7 +145,6 @@ nav:
           - 发行与毕业项目: courses/shipping-and-capstone/README.md
   - 路线与实践:
       - 路线总览: roadmap.md
-      - 知识集现状审计: roadmap/knowledge-set-audit.md
       - 实践代码下载: downloads/README.md
       - 培养方案映射: roadmap/curriculum-mapping.md
       - 实践主线: roadmap/practice-system.md

@@ -4,7 +4,7 @@
 
 ## 机制
 
-分支、远端分支和 `HEAD` 都是指向提交对象的引用；`fetch` 更新本地记录的远端引用，`switch` 更新当前工作区，`merge`/`rebase` 产生或重放历史，`push` 才请求远端引用移动。理解“哪个引用移动、哪个文件改变”是安全协作的核心。
+本地分支与远端跟踪分支是提交引用；HEAD 通常是指向当前分支的符号引用；`fetch` 更新本地记录的远端引用，`switch` 更新当前工作区，`merge`/`rebase` 产生或重放历史，`push` 才请求远端引用移动。理解“哪个引用移动、哪个文件改变”是安全协作的核心。
 
 
 ```text
@@ -19,8 +19,9 @@ A---B---C  main
 git branch                         # 列出本地分支
 git branch feature/player-dash     # 在当前提交创建分支名
 git switch feature/player-dash     # 切换工作区到该分支
-git switch -c feature/player-dash  # 创建并切换
-git branch -d feature/player-dash  # 安全删除已合并本地分支
+git switch -c feature/other-task   # 替代上面两步：创建另一个不存在的分支
+git switch main                    # 先离开待删除分支
+git branch -d feature/player-dash  # 删除满足 Git 合并检查的本地分支
 ```
 
 `switch` 会更新 `HEAD`、暂存区和工作区以匹配目标分支。若未提交修改会被覆盖或导致冲突，Git 通常会阻止切换。不要用强制选项绕过提示；先提交、暂存到安全位置或明确丢弃。
@@ -80,7 +81,9 @@ git pull --rebase
 
 - `--ff-only`：只有当前分支可以直接前移时才成功；历史已分叉就停下，让人决定；
 - `--rebase`：先取远端，再把本地未共享提交重放到远端之上；
-- 默认 merge 行为取决于配置，不应让团队成员各自猜测。
+- 不带策略参数时的默认行为取决于 Git 版本与配置，不应让团队成员各自猜测。
+
+不指定远端/分支时，pull 使用当前分支的上游配置，并不总是 origin/main。先用 `git branch -vv` 看 upstream；功能分支若跟踪 origin/feature，就不会因此整合主线。需要明确整合主线时可先 fetch 再 merge/rebase origin/main；没有配置 upstream 时则明确提供来源，而不是碰运气。
 
 初学者在共享主线使用 `git pull --ff-only` 更容易观察历史；功能分支可按团队规则选择 rebase 或 merge。
 
@@ -130,6 +133,64 @@ git show v1.0.0
 
 若分支持续数周，解决办法通常不是“最后一天再合并”，而是拆小任务、建立兼容接缝、使用 feature flag 或先合并不改变行为的重构。
 
+## 3.8 用本地裸仓库模拟两个协作者
+
+本节承接第 2 章 2.10 的临时目录；跳读者先执行那一节的完整命令块。
+
+裸仓库（bare）保存对象、引用和配置，没有用于编辑的工作区，适合充当这个情景的远端。work 是最初初始化的工作仓库，peer 是从远端创建的独立克隆；origin/main 是各自的本地观察，并不共享即时状态。`git -C <目录> ...` 在指定仓库执行一次 Git 命令，不改变当前 shell 目录。
+
+<!-- git-scenario: 03 -->
+```bash
+# Continue after chapter 2 in the SAME shell; git_lab identifies the temporary lab.
+git init --bare -b main "$git_lab/remote.git"
+cd "$git_lab/work"
+git remote add origin "$git_lab/remote.git"
+git push -u origin main
+git clone "$git_lab/remote.git" "$git_lab/peer"
+git -C "$git_lab/peer" config user.name "Course Fixture"
+git -C "$git_lab/peer" config user.email "fixture.invalid"
+printf 'dash=space\n' > "$git_lab/peer/input.txt"
+git -C "$git_lab/peer" add input.txt
+git -C "$git_lab/peer" commit -m "Add dash input mapping"
+git -C "$git_lab/peer" push
+before_fetch=$(git rev-parse HEAD)
+git rev-parse HEAD origin/main
+git fetch origin
+test "$(git rev-parse HEAD)" = "$before_fetch"
+test ! -e input.txt
+git show origin/main:input.txt
+git log --oneline HEAD..origin/main
+git pull --ff-only
+test -f input.txt
+# Create divergent commits that touch different files.
+printf 'peer update\n' > "$git_lab/peer/peer.txt"
+git -C "$git_lab/peer" add peer.txt
+git -C "$git_lab/peer" commit -m "Record peer change"
+git -C "$git_lab/peer" push
+printf 'local update\n' > local.txt
+git add local.txt
+git commit -m "Record local change"
+if git push; then
+    echo 'ERROR: divergent push unexpectedly succeeded' >&2; exit 1
+fi
+if git pull --ff-only; then
+    echo 'ERROR: divergent pull unexpectedly succeeded' >&2; exit 1
+fi
+git status --short
+git log --oneline --graph --all
+# Preserve both histories; no force push.
+git merge --no-edit origin/main
+test -f local.txt && test -f peer.txt
+git push
+git -C "$git_lab/peer" pull --ff-only
+```
+
+先预测再运行：peer 推送后、work fetch 前，work 的 HEAD 和 origin/main 都停在旧提交；fetch 后只 origin/main 前进，input.txt 不会凭空出现在当前工作区。pull --ff-only 才使 main、索引和工作区前移。随后两端各提交一项修改，push 与 pull --ff-only 都应失败；脚本用 if 明确接住“预期失败”，如果反而成功就退出报错。fetch 已经更新远端观察，即使 pull 的整合失败，也不是所有状态完全没变。
+
+`git log A..B` 选的是 B 可达而 A 不可达的提交；`git diff A...B` 比较共同祖先到 B 的内容，不是“两边全部差异”。要比较当前两棵树直接用 `git diff A B`。分叉后本例 merge 保留两个父历史，再普通 push，不靠强推抹掉别人提交。
+
+该实验验证远端引用语义和本地 transport，不验证托管平台账号、网络故障、PR 权限、分支保护或 LFS；无需为了本课实验创建真实远端。
+
 ## 本章验证
 
 在临时仓库画出：本地 `main`、功能分支、`origin/main` 分别指向哪个提交。每执行一次 `fetch`、`pull --ff-only` 或 `push`，重新运行：
@@ -154,7 +215,7 @@ git log --oneline --decorate --graph --all
 
 <details><summary>讲解与验证</summary>
 
-`git fetch origin` 更新 `origin/main` 和对象，不改工作区；`pull --ff-only` 只有可直接前移才整合；`pull --rebase` 会重放未共享提交、改变提交 ID。用 `git log --graph --all` 验证。force-with-lease 只在个人未共享分支且团队允许时使用。游戏映射：构建分支要知道自己基于哪个提交。
+先确认 feature 的上游指向哪里；下面只有明确以 origin/main 为来源时才是在整合远端 main。`git fetch origin` 更新 `origin/main` 和对象，不改工作区；`pull --ff-only` 只有可直接前移才整合；`pull --rebase` 会重放未共享提交、改变提交 ID。用 `git log --graph --all` 验证。force-with-lease 只在团队明确允许重写、没有其他人依赖的个人功能分支使用。游戏映射：构建分支要知道自己基于哪个提交。
 </details>
 
 ### T03-Q2：非快进 push 前如何保护本地工作
@@ -169,3 +230,7 @@ git log --oneline --decorate --graph --all
 
 可执行方案是 `git fetch origin`，确认当前在 `feature/wave` 后选择 `git rebase origin/main` 或 `git merge origin/main`；解决冲突并运行测试后，再普通 `git push origin feature/wave`。rebase 会重写本地两个提交的身份，若该分支已经被别人基于它开发，应改用 merge 或先沟通；无论哪种方案，都要用 `git log --graph --oneline --decorate --all` 和 `git diff origin/main...HEAD` 验证变更范围。边界是远端分支保护和协作者共享历史，`git push --force` 可能覆盖别人刚推送的提交；常见错误是把本地 `main` 当成远端最新状态。游戏映射：多人同时改输入、敌人配置或资产索引时，先同步再整合可以把冲突留在可审查的功能分支，而不是直接污染集成分支。
 </details>
+
+## 来源与适用范围
+
+核对日期：2026-09-07。使用本地 Git 2.55.0 运行章节情景；命令契约对照 Git 官方手册（[fetch](https://git-scm.com/docs/git-fetch), [pull](https://git-scm.com/docs/git-pull), [push](https://git-scm.com/docs/git-push)）。这些是教学工作流，不代表任何公司的内部流程。

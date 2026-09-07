@@ -28,9 +28,9 @@ cc -std=c17 -Wall -Wextra -Wpedantic -c arena.c -o arena.o
 cc runtime.o arena.o -o arena
 ```
 
-前两条只生成目标文件，最后一条解析跨文件符号。`extern int g_score;` 是声明，不分配定义存储；`int g_score;` 在文件作用域通常是定义。全局变量会扩大状态所有权和测试耦合，宁可通过拥有者结构体传递。
+这组命令是模块命名示意，需要已有的 runtime.c/arena.c；本章下方 health.h、health.c、main.c 才是可从空目录复现的完整文件组。前两条只生成目标文件，最后一条解析跨文件符号。`extern int g_score;` 是声明，不分配定义存储；`int g_score;` 在文件作用域是暂定定义：若本翻译单元没有另一个完整定义，会在翻译单元结束时按零初始化定义处理。全局变量会扩大状态所有权和测试耦合，宁可通过拥有者结构体传递。
 
-故意失败实验：把 `runtime.o` 从链接命令移除，得到 undefined reference；把同一个非 `static` 函数体放进两个 `.c`，得到 multiple definition；让原型参数与定义不一致，观察警告或错误。三类失败分别对应链接输入重复、定义重复和接口不一致。
+故意失败实验：把 `runtime.o` 从链接命令移除，得到 undefined reference；把同一个非 `static` 函数体放进两个 `.c`，得到 multiple definition；让原型参数与定义不一致，观察警告或错误。三类失败分别对应链接输入缺失、定义重复和接口不一致。
 
 ## 6.3 Make 的依赖图
 
@@ -48,14 +48,15 @@ runtime.o: runtime.c runtime.h
 
 ## 验证、失败与游戏映射
 
-用 `nm arena.o`（平台可用时）观察定义和未解析符号，用 `make -n` 检查依赖，用 `make clean all` 验证从空产物开始。游戏模块可对应规则库、渲染适配器、平台层和测试；低层模块不应直接包含 Unity UI 或场景对象。
+用 `nm arena.o`（平台可用时）观察定义和未解析符号，用 `make -n` 检查依赖，使用下方完整 Makefile 的 `make clean && make all` 验证从空产物开始（顺序执行，不把可能并行的 clean 与 all 当成依赖链）。游戏模块可对应规则库、渲染适配器、平台层和测试；低层模块不应直接包含 Unity UI 或场景对象。
 
 ## 进一步拆解与实验
 
-## 6.5 头文件、定义和链接的最小实验
+## 6.4 头文件、定义和链接的最小实验
 
 建立三个文件：
 
+<!-- executable: health.h -->
 ```c
 /* health.h：声明，给调用者看的接口 */
 #ifndef HEALTH_H
@@ -64,6 +65,7 @@ int clamp_health(int health, int max_health);
 #endif
 ```
 
+<!-- executable: health.c -->
 ```c
 /* health.c：定义，真正提供机器码 */
 #include "health.h"
@@ -74,6 +76,7 @@ int clamp_health(int health, int max_health) {
 }
 ```
 
+<!-- executable: main.c -->
 ```c
 /* main.c：使用者 */
 #include <stdio.h>
@@ -94,7 +97,7 @@ cc main.o health.o -o health-demo
 
 如果 `main.c` 没有包含头文件，编译器无法检查调用是否匹配；如果只链接 `main.o`，会得到未解析的 `clamp_health`；如果在头文件放普通函数定义并被多个 `.c` 包含，可能得到重复定义。头文件保护宏防止同一个翻译单元重复包含，但不能替你处理跨翻译单元的定义规则。
 
-## 6.6 `static` 与可见性
+## 6.5 `static` 与可见性
 
 文件作用域的 `static` 函数只在当前翻译单元可见：
 
@@ -106,16 +109,26 @@ static int normalize_damage(int damage) {
 
 这有两个作用：隐藏模块内部实现，并避免与别的文件同名冲突。对外暴露的函数应尽量少；每多一个公共符号，就多一个需要维护的契约。不要把所有函数都放进头文件，也不要用全局变量跨模块传递状态而不写所有权和生命周期。
 
-## 6.7 Make 规则表达依赖
+## 6.6 Make 规则表达依赖
 
+<!-- executable: Makefile -->
 ```make
+CC = cc
 CFLAGS = -std=c17 -Wall -Wextra -Wpedantic -g
-arena: main.o health.o
-\t$(CC) $(CFLAGS) $^ -o $@
-
+.PHONY: all clean
+all: health-demo
+health-demo: main.o health.o
+	$(CC) $(CFLAGS) $^ -o $@
 main.o: main.c health.h
+	$(CC) $(CFLAGS) -c $< -o $@
 health.o: health.c health.h
+	$(CC) $(CFLAGS) -c $< -o $@
+clean:
+	rm -f main.o health.o health-demo
 ```
+
+只在新建的章节临时目录保存这些文件。配方行必须以真实 Tab 开头，不是字符 `\t`；`$@` 是目标名，`$<` 是第一个依赖，`$^` 是全部依赖。clean 只删除本例三个明确产物；不要把它扩成递归清理源码目录。运行 `make all && ./health-demo` 得到 20，第二次 `make -n` 不应列编译命令；`touch health.h` 后 `make -n` 应显示两个编译和一次链接。
+
 
 `main.o` 依赖 `health.h` 是因为头文件改变时，`main.o` 必须重新编译；链接规则只在对象文件改变时重新生成可执行文件。`make` 比“每次手敲一长串命令”可靠，因为依赖关系成为可检查的文本。它不会自动知道隐藏依赖：若生成脚本、环境变量或工具版本影响输出，也必须显式记录。
 
@@ -146,7 +159,7 @@ Makefile 只写 `runtime.o: runtime.c`，而 `runtime.c` 包含 `runtime.h`。�
 
 <details><summary>讲解与验证</summary>
 
-改为 `runtime.o: runtime.c runtime.h`，所有直接包含头文件的目标都列出它。运行 `touch runtime.h && make -n`，预期看到对应 `.o` 重编译；再 `make clean all` 做冷构建。常见错误是只给最终可执行文件列所有源文件，导致增量构建无法判断。游戏映射：资源导入和生成代码也需要显式输入依赖，否则编辑器缓存会掩盖错误。
+改为 `runtime.o: runtime.c runtime.h`，所有直接包含头文件的目标都列出它。运行 `touch runtime.h && make -n`，预期看到对应 `.o` 重编译；再 `make clean && make all` 做冷构建。常见错误是只给最终可执行文件列所有源文件，导致增量构建无法判断。游戏映射：资源导入和生成代码也需要显式输入依赖，否则编辑器缓存会掩盖错误。
 </details>
 
 下一章利用模块 API 传递数组，开始讨论连续内存、长度和有效区间。

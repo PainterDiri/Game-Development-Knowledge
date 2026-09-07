@@ -32,7 +32,7 @@
 先测量再优化。记录输入规模、编译选项、机器/工具版本、重复次数、平均/分位时间和峰值内存。一个 O(n) 扫描可能比复杂数据结构更快，也可能在数十万实体时成为瓶颈；缓存局部性、分配次数和分支预测都会影响实际结果。优化后必须重跑正确性测试和基准，不能以一次快跑替代统计。
 
 ```bash
-make clean all
+make clean && make all
 make test
 make asan
 ```
@@ -77,13 +77,13 @@ Unity 适配器：MonoBehaviour/输入事件 → 领域命令；快照 → 表�
 
 ## 14.7 性能实验的可复现记录
 
-一次基准至少记录：提交 ID、编译器和版本、`CFLAGS`、操作系统/架构、输入规模、seed、预热次数、测量次数、平均值和分位数。改变一个变量后再比较，并先确认输出 checksum 与基线一致。
+一次基准至少记录：提交 ID、编译器和版本、`CFLAGS`、操作系统/架构、输入规模、seed、预热次数、测量次数、平均值和分位数。改变一个变量后再比较，并先用字段级断言、独立预期输出和回归测试确认规则没有变化；checksum 只能辅助定位差异，不能证明状态相等。
 
 ```bash
-/usr/bin/time -l ./arena --seed 42 < commands.txt
+/usr/bin/time -p ./arena --seed 42 < commands.txt
 ```
 
-不同系统的 `time` 选项不同，不能把示例开关当成可移植标准；先运行 `time --help` 或使用项目内统一脚本。若测量结果差异小于噪声，结论应写成“不足以证明改善”，而不是挑一次最快结果。
+在已构建的个人主实践目录先按实践页准备 commands.txt。这里 -p 用于观察 real/user/sys 的粗粒度用时，不足以评估亚毫秒规则函数。不同系统的 `time` 选项不同，shell 关键字 time 也不一定是 /usr/bin/time；应查当前工具的帮助或手册，不假定 BSD/macOS 支持 --help。微基准需批量迭代和单调高精度时钟，并控制输入规模及输出开销。若测量结果差异小于噪声，结论应写成“不足以证明改善”，而不是挑一次最快结果。
 
 ## 14.8 课程出口的能力检查
 
@@ -102,7 +102,7 @@ Unity 适配器：MonoBehaviour/输入事件 → 领域命令；快照 → 表�
 
 <details><summary>讲解与验证</summary>
 
-可覆盖 count=0、1、剩余容量恰好、超容量、runtime=NULL、不同 seed/同 seed、内部计数已满、分配/解析失败（若适用）。成功断言数量和字段范围，失败断言错误码且 checksum/seed/count 不变。用 `make test` 和 Sanitizer 执行；常见错误只测成功生成。游戏映射：波次生成失败不应半生成一组敌人。
+可覆盖 count=0、1、剩余容量恰好、超容量、runtime=NULL、不同 seed/同 seed、内部计数已满、分配/解析失败（若适用）。成功断言数量和字段范围，失败断言错误码，并逐字段比较 seed、count 及有效元素与调用前快照不变；checksum 仅作补充。用 `make test` 和 Sanitizer 执行；常见错误只测成功生成。游戏映射：波次生成失败不应半生成一组敌人。
 </details>
 
 ### C14-Q2：为什么不能只用“快了”证明优化
@@ -116,7 +116,7 @@ Unity 适配器：MonoBehaviour/输入事件 → 领域命令；快照 → 表�
 
 <details><summary>讲解与验证</summary>
 
-需要固定输入规模/seed、编译选项和环境，重复多次报告分布而非单次值；同时运行功能、边界和 Sanitizer 测试，确认 checksum/行为不变，并记录内存和分配变化。若收益只在缓存热身后出现，应区分冷/热结果。游戏映射：帧预算优化必须证明行为不变、目标平台有效且不会把诊断能力换成不可复现。
+需要固定输入规模/seed、编译选项和环境，重复多次报告分布而非单次值；同时运行功能、边界和 Sanitizer 测试，用规则断言和可观察输出确认行为不变（仅 checksum 相同不充分），并记录内存和分配变化。若收益只在缓存热身后出现，应区分冷/热结果。游戏映射：帧预算优化必须证明行为不变、目标平台有效且不会把诊断能力换成不可复现。
 </details>
 
 ### C14-Q3：模块测试替身应该替代什么
@@ -131,6 +131,6 @@ Unity 适配器：MonoBehaviour/输入事件 → 领域命令；快照 → 表�
 
 ## 课程总验收
 
-从主仓库根目录按实践页初始化参考代码副本到 `.practice/c-programming/`，只编辑副本；运行 `make clean all`、`make test`、`make asan` 和固定 seed CLI。能解释每一条命令的输入、输出、状态改变、失败恢复和 Git 隔离，才算完成本课程，而不是只看到“编译成功”。
+从主仓库根目录按实践页初始化参考代码副本到 `.practice/c-programming/`，只编辑副本；运行 `make clean && make all`、`make test`、`make asan` 和固定 seed CLI。能解释每一条命令的输入、输出、状态改变、失败恢复和 Git 隔离，才算完成本课程，而不是只看到“编译成功”。
 
 > 资料依据：[WG14 N1570 公开草案](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)（访问日期：2026-09-01）；[GCC Warning Options](https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html) 与 [Clang AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)（访问日期：2026-09-01）。用于语言边界、诊断开关和工具能力说明；具体编译器版本可能改变警告细节。

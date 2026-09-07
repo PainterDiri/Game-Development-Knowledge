@@ -8,6 +8,7 @@
 
 ## 1.1 最小程序与可观察结果
 
+<!-- executable: hello.c -->
 ```c
 #include <stdio.h>
 
@@ -34,7 +35,7 @@ echo $?
 3. **汇编**生成目标文件，其中已有机器码和未解析符号；
 4. **链接**把目标文件与库组合，解析 `puts` 等外部符号，生成可执行文件。
 
-可故意制造三类失败：删掉分号得到编译错误；声明但不定义 `apply_damage` 得到链接错误；编译成功后访问非法内存才是运行时失败。错误阶段不同，修复工具也不同。不要看到红字就随机改代码。
+可故意制造三类失败：删掉分号得到编译错误；声明并实际调用但不定义 `apply_damage` 得到链接错误（仅声明未使用通常不需要链接定义）；编译成功后访问非法内存才是运行时失败。错误阶段不同，修复工具也不同。不要看到红字就随机改代码。
 
 ```bash
 cc -std=c17 -E hello.c > hello.i   # 只预处理
@@ -57,10 +58,14 @@ cc hello.o -o hello                # 单独链接
 
 ## 1.4 `main` 的参数与退出契约
 
+这是第二个完整程序，另存为 `args.c`，不要与 `hello.c` 的 `main` 放在同一文件。`char **argv` 的完整指针模型在第 8–9 章展开；此处只需把 `argv[i]` 理解为第 i 段参数文本，且先证明 `i < argc` 才读取。
+
+<!-- executable: args.c -->
 ```c
+#include <stdio.h>
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <seed>\n", argv[0]);
+        fprintf(stderr, "usage: %s <seed>\n", argc > 0 ? argv[0] : "args");
         return 2;
     }
     printf("seed text = %s\n", argv[1]);
@@ -68,15 +73,16 @@ int main(int argc, char **argv) {
 }
 ```
 
-`argc` 是参数数量，`argv` 是指向参数字符串的指针数组；`argv[0]` 通常是程序名。这里只打印 seed 文本，还没有把它安全转换成整数。错误用 `stderr`，并返回非零退出码，使测试脚本能区分“正常输出”和“用法错误”。
+`argc` 是参数数量，`argv` 是指向参数指针序列首元素的指针，序列中的每个元素指向一段参数文本；`argv[0]` 通常是程序名。C 允许 argc 为 0，此时不能把 argv[0] 当作可打印字符串；示例用备用名字处理它。这里只打印 seed 文本，还没有把它安全转换成整数。错误用 `stderr`，并返回非零退出码，使测试脚本能区分“正常输出”和“用法错误”。
 
 ## 1.5 验证、失败与游戏映射
 
 验证时同时记录命令、退出码和产物：
 
 ```bash
-./hello 42 >out.txt 2>err.txt; printf 'exit=%d\n' "$?"
-./hello >out.txt 2>err.txt; printf 'exit=%d\n' "$?"
+cc -std=c17 -Wall -Wextra -Wpedantic args.c -o args &&
+./args 42 >out.txt 2>err.txt; printf 'exit=%d\n' "$?"
+./args >out.txt 2>err.txt; printf 'exit=%d\n' "$?"
 ```
 
 预期第一条成功，第二条输出用法并失败。常见错误是双击程序后窗口消失便认为“C 没运行”，或者把链接错误误当函数运行时找不到。游戏映射：资源转换器、服务器、打包器和离线验证器都依赖稳定的命令行、标准流和退出码契约。
@@ -97,7 +103,7 @@ cc -std=c17 -Wall -Wextra -Wpedantic hello.c -o hello
 - `hello.c` 是输入源文件。命令不会修改它。
 - `-o hello` 指定输出文件。如果省略，许多 Unix 编译器会默认生成 `a.out`，这只是默认文件名，不是语言规则。
 
-可以用 `echo $?` 观察驱动程序的退出码。编译失败时不要运行旧的 `hello`，因为旧产物可能仍然存在，让你误以为新代码已经生效。更安全的做法是先删除临时输出，或把构建输出放进单独目录。
+可以用 `echo $?` 观察驱动程序的退出码。编译失败时不要运行旧的 `hello`，因为旧产物可能仍然存在，让你误以为新代码已经生效。用 `cc ... -o hello && ./hello` 把执行依赖于本次构建成功；`&&` 只在左侧返回 0 时执行右侧。独立输出目录有助于识别产物，但单靠换目录不能阻止运行旧文件。
 
 ## 1.7 从源文件到进程的时间线
 

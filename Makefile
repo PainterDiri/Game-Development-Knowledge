@@ -20,9 +20,11 @@ docs-build: docs-sync
 check-code:
 	$(PYTHON) -m unittest discover -s scripts/tests -v
 	$(PYTHON) scripts/test_reference_code.py --bundles
+	$(PYTHON) scripts/test_lesson_examples.py
 
 check-code-sanitize:
 	$(PYTHON) scripts/test_reference_code.py --bundles --sanitize
+	$(PYTHON) scripts/test_lesson_examples.py --sanitize
 
 check: docs-sync check-code
 	$(PYTHON) scripts/check_repo.py

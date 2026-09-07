@@ -12,6 +12,8 @@ if (health <= 0) {
 }
 ```
 
+本章 `Enemy`/`enemy->health` 片段预览第 10 章的记录类型：`enemy->health` 表示指针所指敌人记录的 health 字段，`items[i].health` 表示第 i 个记录的字段。它们不是尚未给出类型定义的可独立程序。第 4.6 节使用 int 数组的搜索函数不依赖 Enemy 类型；`size_t` 来自 `<stddef.h>`，调用者保证数组真实具有 count 个元素。
+
 条件中的 0 表示假，非 0 表示真。赋值 `=` 与比较 `==` 不同；把常量放左边不能替代警告和清晰代码。多个布尔条件要写清短路的用途：
 
 ```c
@@ -26,7 +28,7 @@ if (enemy != NULL && enemy->health > 0) { /* 安全地先检查指针 */ }
 
 ```c
 for (size_t i = 0; i < count; ++i) {
-    enemies[i].health -= 1;
+    if (enemies[i].health > 0) enemies[i].health -= 1;
 }
 ```
 
@@ -38,7 +40,7 @@ for (size_t i = 0; i < count; ++i) {
 [i, count) 尚未处理
 ```
 
-当 `i < count` 时访问 `enemies[i]` 合法；每次 `i++` 让未处理区间缩小；退出时 `i == count`，全部元素处理完成。这比“看起来循环了 count 次”更能发现 `<=` 越界。
+前提是 enemies 指向至少 count 个有效元素，且生命已初始化为非负值。只有数字范围正确还不能证明内存对象有效。当 `i < count` 时访问 `enemies[i]` 合法；每次 `i++` 让未处理区间缩小；退出时 `i == count`，全部元素处理完成。这比“看起来循环了 count 次”更能发现 `<=` 越界。
 
 ## 4.3 `while` 与状态机
 
@@ -127,6 +129,32 @@ while (phase != GAME_OVER) {
 - 保留 tombstone/死亡标志：遍历简单，但需要周期性压缩。
 
 选择方案前先写出“顺序是否是游戏规则”的答案。敌人生成池通常不需要稳定顺序，可以交换删除；回放或 UI 排序可能需要稳定顺序。每种实现都要测空集合、单元素、最后元素和连续删除。
+
+## 4.9 搜索的完整验证入口
+
+保存为 `search.c`，以第 1 章 C17 开关编译运行，不带 `-DNDEBUG`，输出 `search: passed`。ids 非空时必须指向至少 count 个活着的 int；允许 NULL/0 因为不访问数组。未找到返回 count，调用者必须先判断 result < count 才能拿它索引。把循环改成 <= 后不再运行普通版本，应按第 13 章带 ASan 验证越界，不把越界输出当答案。
+
+<!-- executable: search.c -->
+```c
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+static size_t find_enemy(const int *ids, size_t count, int wanted) {
+    for (size_t i = 0; i < count; ++i) {
+        if (ids[i] == wanted) return i;
+    }
+    return count;
+}
+int main(void) {
+    const int ids[] = {4, 7, 9};
+    assert(find_enemy(NULL, 0u, 7) == 0u);
+    assert(find_enemy(ids, 1u, 4) == 0u);
+    assert(find_enemy(ids, 3u, 9) == 2u);
+    assert(find_enemy(ids, 3u, 8) == 3u);
+    puts("search: passed");
+    return 0;
+}
+```
 
 ## 本章练习
 

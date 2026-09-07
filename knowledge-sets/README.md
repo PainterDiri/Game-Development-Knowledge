@@ -12,7 +12,7 @@
 
 截至 **2026-09-01**，[工具链与 Git](toolchain-and-git/README.md)和[C 程序设计](c-programming/README.md)具备完整正文、章末练习、主实践和可下载代码。其他目录仍是课程骨架。
 
-- [知识集现状审计与优化方案](../roadmap/knowledge-set-audit.md)：解释核心主线、支撑课程、方向拓展和建设优先级；
+- [学习路线与范围控制](../roadmap/README.md)：解释核心主线、支撑课程、方向拓展和按门生成的边界；
 - `scaffolded`：只有课程定位和生成入口；
 - `in-progress`：正在建设，未完成页面不伪装成完整课程；
 - `completed`：详细正文、章末练习、唯一主实践、必要代码和质量门禁均已完成。

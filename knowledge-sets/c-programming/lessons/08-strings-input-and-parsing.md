@@ -62,6 +62,7 @@ long value = strtol(text, &end, 10);
 
 保存为个人临时目录的 `parse_health.c`。这不是“任意整数解析器”：语法为至少一位数字，可有前导零，不接受符号、空白或尾随字符。
 
+<!-- executable: parse_health.c -->
 ```c
 #include <errno.h>
 #include <stdbool.h>

@@ -159,6 +159,51 @@ PR 上的低成本门禁通常按失败成本递增：
 
 角色名称会变化，但每个关键状态必须有所有者、可修改者、生命周期和失败路径。
 
+## 5.10 从标签到同一份发布字节
+
+第 3–4 章证明的是 Git 操作，不是托管 PR 或真实平台发行。这里继续小情景，用源码 tar 充当“教学 artifact”，检验：候选来自哪次提交、检查的是哪份字节、主线后来变化是否影响旧候选。`git archive` 只包含所选提交的跟踪内容，不含工作区未提交文件；它也不会替你收齐子模块、LFS 实体或生成可执行游戏。
+
+<!-- git-scenario: 05 -->
+```bash
+# Simulate promotion of immutable bytes, not an actual game/platform release.
+cd "$git_lab/work"
+test -z "$(git status --porcelain)"
+git tag -a v0.1.0-lab -m "Validated teaching candidate"
+mkdir "$git_lab/artifacts"
+git archive --format=tar --output="$git_lab/artifacts/rc.tar" v0.1.0-lab
+python3 - "$git_lab/artifacts" <<'PYTEST'
+from pathlib import Path
+import hashlib
+import shutil
+import sys
+import tarfile
+root = Path(sys.argv[1])
+with tarfile.open(root / "rc.tar") as archive:
+    stream = archive.extractfile("rules.txt")
+    assert stream is not None
+    assert stream.read() == b"damage=15\ndebug=0\ninvulnerability=1\n"
+    assert "input.txt" in archive.getnames()
+shutil.copyfile(root / "rc.tar", root / "released.tar")
+assert hashlib.sha256((root / "rc.tar").read_bytes()).digest() == hashlib.sha256((root / "released.tar").read_bytes()).digest()
+PYTEST
+# Later main changes; the already checked artifact must NOT silently change.
+printf 'damage=99\ndebug=0\ninvulnerability=1\n' > rules.txt
+git add rules.txt && git commit -m "Simulate a later unvalidated change"
+git show v0.1.0-lab:rules.txt
+python3 - "$git_lab/artifacts" <<'PYTEST'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+assert (root / "rc.tar").read_bytes() == (root / "released.tar").read_bytes()
+PYTEST
+git status --short
+printf 'Temporary lab retained for inspection: %s\n' "$git_lab"
+```
+
+Python 验证规则和输入文件后，把同一 rc.tar 复制为 released.tar 并比较 SHA-256。哈希相同支持本次传递未改变字节的检查（末段还直接逐字节比较），但不是数学上的无碰撞证明，不证明游戏正确、内容安全或来源可信；真实发布应在目标平台验证同一 artifact。本例没有运行网络部署、签名和商店提交流程。
+
+现在若新提交出问题，“回滚部署”是重新选用已经保存和验证的旧 artifact；“代码回退”则是 revert 并按新提交重新构建候选。若涉及数据库/存档 schema，需要独立兼容计划，不应根据这份源码 tar 宣布数据可回滚。临时目录保留供检查；只在确认它确实是本次创建且无需要保留的内容后自行清理，不复制递归删除命令到真实项目。
+
 ## 本章验收：模拟一次专业交付
 
 为“增加玩家冲刺”写一页交付说明：任务范围、分支名、3 个以内计划提交、测试、PR 描述、评审角色、CI 门禁、合并策略、发布候选验证和回滚方案。然后回答：
@@ -172,18 +217,13 @@ PR 上的低成本门禁通常按失败成本递增：
 
 ## 本章练习
 
-### T05-Q1：PR 通过不等于发布
+### T05-Q1：热修复为何不能只留在发布分支
 
-单测通过但目标平台输入映射缺失，怎样定位与回滚？
-
-<details><summary>最小提示</summary>
-
-分清逻辑、资产/配置、构建和部署层。
-</details>
+发布分支修好空存档崩溃，但 main 正在重构加载器。同事建议直接把 release 整条分支 merge 到 main。哪些证据决定可否这样做？怎样防止下一版复发？
 
 <details><summary>讲解与验证</summary>
 
-QA 记录平台、build ID 和复现；程序补配置与回归；CI 从整合后的主线重建 artifact；负责人决定取消候选、发布旧 artifact 或等待修复。`git revert` 是代码历史变化，部署旧包是 artifact 回退，存档/数据库回滚是数据层操作。游戏映射：输入和资源边界必须进入发布冒烟。
+先找修复的最小原因与回归输入，再检查 release 是否夹带冻结配置、临时版本号或旧接口。可迁移的独立修复可以 cherry-pick -x；接口已重构则按同一不变量在 main 重做修复，不能机械粘贴补丁。让同一个损坏存档回归在两条维护线上通过，分别验证候选包。常见错误是把“补丁应用成功”当成新加载器已修好，或只修改线上包不回到版本历史。存档崩溃与其他长期维护分支都需要明确回移所有者。
 </details>
 
 ### T05-Q2：把“可合并”与“可发布”分开
@@ -198,3 +238,7 @@ QA 记录平台、build ID 和复现；程序补配置与回归；CI 从整合�
 
 PR 层检查代码、单测和配置 diff；集成层在目标平台导入真实输入资产并运行冒烟；构建层生成带 commit、平台和配置版本的 artifact；发布层只发布通过前述检查的同一 artifact。若输入资产缺失，应在目标平台集成或构建门禁失败，而不是等玩家报告后回滚；验证包括 CI 退出码、产物 manifest、启动后按键行为和 artifact hash。边界是“代码合并”可能已完成但“发布资格”仍未满足，不能用 revert 代替修复缺失配置。常见错误是只看 PR 绿灯，或发布时重新构建导致验收包与上线包不是同一个。游戏映射：平台输入、分辨率、存档迁移和资源导入都需要从代码评审一路延伸到目标平台冒烟。
 </details>
+
+## 来源与适用范围
+
+核对日期：2026-09-07。使用本地 Git 2.55.0 运行章节情景；命令契约对照 Git 官方手册（[archive](https://git-scm.com/docs/git-archive), [cherry-pick](https://git-scm.com/docs/git-cherry-pick), [revert](https://git-scm.com/docs/git-revert)）。这些是教学工作流，不代表任何公司的内部流程。

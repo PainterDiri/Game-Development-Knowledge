@@ -42,18 +42,21 @@ mini-game/
 
 终端（terminal）提供一个文字界面；shell（例如 zsh、bash 或 PowerShell）读取命令，找到对应程序并启动它。
 
-先在课程代码目录练习只读命令：
+以下命令从知识库根目录开始，先建立个人副本；若已有实践，初始化脚本应保留它，遇到拒绝不要覆盖。验证 Git 忽略后再进入副本：
 
 ```bash
+python3 scripts/init_practice.py --course toolchain-and-git
+git check-ignore -v .practice/toolchain-and-git
+git status --short --untracked-files=all
+cd .practice/toolchain-and-git/repro-game
 pwd                         # 打印当前工作目录
 ls                          # 列出当前目录内容
-cd code/repro-game          # 改变当前工作目录
 python3 --version           # 启动 Python，要求它打印版本
 ```
 
 每条命令都可以按四个问题理解：
 
-| 问题 | `cd code/repro-game` 的答案 |
+| 问题 | `cd .practice/toolchain-and-git/repro-game` 的答案 |
 |---|---|
 | 读取什么？ | 当前目录和目标相对路径 |
 | 改变什么？ | 当前 shell 之后解释相对路径的起点 |
@@ -107,7 +110,7 @@ python3 dist/game.py --seed 42   # 只有构建过后才存在
 
 ## 1.5 第一次项目观察
 
-进入 `knowledge-sets/toolchain-and-git/code/repro-game/` 后运行：
+在刚才的 `.practice/toolchain-and-git/repro-game/` 个人副本中运行（不要在公开参考目录运行可能产生缓存的测试）：
 
 ```bash
 pwd
@@ -120,7 +123,7 @@ python3 src/game.py --seed 42
 
 1. 源码在哪里？
 2. 测试在哪里？
-3. 哪条命令只是读取，哪条命令会启动进程？
+3. 哪条命令改变当前 shell 目录，哪条启动外部程序？启动进程与修改文件是否是同一回事？
 4. 测试成功时退出码是什么？
 5. 改变 seed 后，哪些输出改变，哪些不应改变？
 
@@ -128,6 +131,18 @@ python3 src/game.py --seed 42
 
 现在你已经知道“项目目录中有状态，命令会读取或改变状态”。第 2 章引入 Git：它不会自动理解程序是否正确，而是帮助我们精确记录**哪些文件状态准备进入下一次项目快照**。
 
+
+## 1.6 复制命令前必须知道的 shell 边界
+
+本课程命令块采用 bash/zsh 的语法；PowerShell 的变量、退出码与重定向规则不同，不能混着复制。`cd` 是当前 shell 的内建命令；python3、Git 等一般作为子进程运行。即使 ls 只读取目录，它通常也会启动进程，所以“只读”和“启动进程”不是二选一。
+
+`>` 创建或覆盖文件，`>>` 追加；`2>` 单独处理标准错误；`|` 把前一程序标准输出送入后一程序。`$?` 只保存刚结束命令的退出码，所以先执行 ls 再 echo 得到的不是更早的测试结果。`&&` 让后一步只在前一步成功后执行；`;` 则不管前一步是否成功都继续。
+
+变量取路径时加双引号，例如 `cd "$git_lab/work"`，避免路径中的空格被拆成多个参数。`$(command)` 获取命令的标准输出；`mktemp -d` 创建新的临时目录，不复用别人可能正在使用的固定路径。后续章节用它造一次性 Git 情景，不要求把情景当成第二个主实践或学习日志。`<commit>` 这类尖括号占位必须替换为实际提交 ID，不能原样输入。
+
+后面的验证会用 `test`：`test -f path` 判断文件存在且是普通文件；`test ! -e path` 判断路径不存在；`test -z "$text"` 判断字符串为空；`test "$a" = "$b"` 比较字符串。成立退出 0，不成立退出非零，失败本身不一定打印提示。`if command; then ...; fi` 按 command 的退出码选分支，`exit 1` 会结束当前 shell/脚本，所以发现“预期失败反而成功”的保护分支应停止，而不是继续粘贴。
+
+连续情景中的命令默认逐条执行并检查错误；维护者回归脚本使用 `set -eu` 在未处理失败或未设置变量时停止。预期失败放进 if 显式判断，而不是依赖忽略所有错误。`<<'PYTEST'` 到独立一行 PYTEST 是 here-document，把其间的 Python 文本交给 `python3 -` 从标准输入运行；分隔符加引号使 shell 不展开其中的 `$`。这些 Python 代码是可直接运行的验证器，不要求先掌握 Python 才能理解 Git 引用变化。
 
 ## 本章练习
 

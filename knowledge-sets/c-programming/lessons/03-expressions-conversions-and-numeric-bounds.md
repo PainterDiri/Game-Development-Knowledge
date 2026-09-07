@@ -37,7 +37,9 @@ int requested = -1;
 size_t count = (size_t)requested;
 ```
 
-因此文本解析应先进入足够宽的有符号类型，检查 `0 <= value <= limit`，最后再转 `size_t`。循环 `for (size_t i = count - 1; i >= 0; --i)` 也不会按预期终止，因为无符号值永远不小于 0。反向遍历可写 `for (size_t i = count; i-- > 0;)`，并通过 0、1、最大数量测试理解边界。
+对于本课上限较小的计数，文本解析可先进入足够宽的有符号类型，检查 `0 <= value <= limit`，最后再转 `size_t`。若要接受无符号类型的完整范围，有符号中间类型可能装不下；需改用无符号解析函数，并在解析前明确拒绝负号、随后检查范围和整串消费（第 8 章展开）。循环 `for (size_t i = count - 1; i >= 0; --i)` 也不会按预期终止，因为无符号值永远不小于 0。反向遍历可写 `for (size_t i = count; i > 0;) { --i; /* 访问第 i 项 */ }`，并通过 0、1、最大数量测试理解边界；先判断再递减，空区间不会发生无符号回绕。
+
+比较也会转换：`-1 < 1u` 为假，因为 int 与 unsigned int 同等级比较时，-1 先转成 UINT_MAX。这不是“负数变大”的业务规则，而是通常算术转换。unsigned char 等比 int 窄的类型还可能先提升为 int：只要 int 能表示该类型全部值，运算就在 int 中进行；否则提升为 unsigned int。因此不能仅凭变量名带 unsigned，就断言中间表达式必定按该窄类型回绕。对不同等级的有符号/无符号类型，应比较等级和可表示范围，不能简单概括成“总转 unsigned”。
 
 ## 3.4 溢出规则不同
 
@@ -101,7 +103,7 @@ count += incoming;
 
 ```c
 #include <limits.h>
-if (damage > INT_MAX - total_damage) {
+if (damage < 0 || total_damage < 0 || damage > INT_MAX - total_damage) {
     return false;
 }
 total_damage += damage;
@@ -147,6 +149,59 @@ bool nearly_equal(double a, double b, double abs_eps, double rel_eps) {
 
 绝对误差适合接近零的值，相对误差适合量级变化大的值；只使用一个固定 `0.000001` 可能在大数或接近零时失效。游戏中的位置、冷却和动画时间需要先决定单位、积分方式和可接受漂移，而不是看到 `==` 就机械替换。
 
+## 3.11 把百分比的范围写进实现
+
+在本例明确 `0 <= current <= maximum <= INT_MAX` 且 `maximum > 0`。函数片段需要 `<stdbool.h>`、`<limits.h>`、`<stddef.h>`：
+
+```c
+bool percent_floor(int current, int maximum, int *out) {
+    if (out == NULL || current < 0 || maximum <= 0 || current > maximum)
+        return false;
+    if (current > INT_MAX / 100) return false;
+    *out = current * 100 / maximum;
+    return true;
+}
+```
+
+它故意拒绝中间乘法装不下的输入，即使数学结果只有 0–100；这是正确但保守的契约，不是支持任意生命上限的方案。“转成更宽类型”只有目标确实更宽且足够容纳中间值才成立。先验证 1/2→50、0/20→0、20/20→100、maximum=0 拒绝且输出不变，再讨论更宽类型或商余分解。浮点血条显示与整数权威结算的舍入要求不能混用。
+## 3.12 从小值到表示上限的可运行检查
+
+保存为 `numeric.c`，用 `cc -std=c17 -Wall -Wextra -Wpedantic numeric.c -o numeric && ./numeric` 运行，不带 `-DNDEBUG`。assert 来自 `<assert.h>`：条件为假会中止并报告，条件为真继续；它适合测试内部预期，不替代发布版本的外部输入检查。预期 `numeric: passed`。极值测试不申请巨大内存，只验证纯算术边界。
+
+<!-- executable: numeric.c -->
+```c
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+bool percent_floor(int current, int maximum, int *out) {
+    if (out == NULL || current < 0 || maximum <= 0 || current > maximum)
+        return false;
+    if (current > INT_MAX / 100) return false;
+    *out = current * 100 / maximum;
+    return true;
+}
+static bool fits(size_t used, size_t requested, size_t capacity) {
+    return used <= capacity && requested <= capacity - used;
+}
+int main(void) {
+    int result = -1;
+    assert(percent_floor(1, 2, &result) && result == 50);
+    assert(percent_floor(0, 20, &result) && result == 0);
+    assert(percent_floor(20, 20, &result) && result == 100);
+    assert(!percent_floor(1, 0, &result) && result == 100);
+    assert(!percent_floor(INT_MAX, INT_MAX, &result) && result == 100);
+    assert(fits(0u, 0u, 0u));
+    assert(fits(SIZE_MAX - 1u, 1u, SIZE_MAX));
+    assert(!fits(SIZE_MAX, 1u, SIZE_MAX));
+    assert(!fits(2u, 0u, 1u));
+    puts("numeric: passed");
+    return 0;
+}
+```
+
 ## 本章练习
 
 ### C03-Q1：容量检查为何写成减法
@@ -189,7 +244,7 @@ int total = values[i++] + values[i++];
 
 <details><summary>讲解与验证</summary>
 
-加法的语法分组由运算符优先级决定，但两个 `i++` 之间没有足够的顺序关系；同一个标量在一个完整表达式中被多次修改而没有序列点，程序触及未定义行为，不能从一次运行结果推断规则。改成 `size_t left = i; size_t right = i + 1; i += 2; int total = values[left] + values[right];`，并先证明 `i + 1 < count` 不溢出且索引有效。边界是 `count` 小于 2、`i` 接近 `SIZE_MAX` 以及读取与推进分到不同阶段后的失败路径；常见错误是只加括号就以为改变了求值顺序。验证可用 `-Wall -Wextra`、Sanitizer 和 count=0/1/2 的测试。游戏映射：输入游标、伤害事件队列和 RNG 消费若把副作用藏在表达式中，会破坏重放和调试的可解释性。
+加法的语法分组由运算符优先级决定，但两个 `i++` 之间没有足够的顺序关系；同一个标量在一个完整表达式中被多次修改而没有序列点，程序触及未定义行为，不能从一次运行结果推断规则。先检查 `i <= count && count - i >= 2`，再依次读取 `values[i]`、`values[i + 1]`。还需证明两个 int 相加不会溢出，才能计算 total 并最后执行 `i += 2`。数组必须真实包含 count 个有效元素；索引检查不替代对象有效期。边界是 `count` 小于 2、`i` 接近 `SIZE_MAX` 以及读取与推进分到不同阶段后的失败路径；常见错误是只加括号就以为改变了求值顺序。验证可用 `-Wall -Wextra`、Sanitizer 和 count=0/1/2 的测试。游戏映射：输入游标、伤害事件队列和 RNG 消费若把副作用藏在表达式中，会破坏重放和调试的可解释性。
 </details>
 
 下一章把表达式放入分支和循环，并用不变量证明每次状态更新都留在合法范围。

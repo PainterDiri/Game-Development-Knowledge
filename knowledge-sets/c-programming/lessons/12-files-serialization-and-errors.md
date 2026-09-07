@@ -1,135 +1,202 @@
-# 12. 文件、序列化与错误模型：存档不是把内存倒进文件
+# 12. 文件、序列化与错误模型：读到一半不能覆盖旧存档状态
 
-程序退出后，运行时状态要么消失，要么被编码成外部格式。文件 I/O 可能遇到不存在、权限、短读、截断、错误版本和损坏内容。可靠的存档流程必须把“打开流”“解析字节”“验证领域规则”“提交新状态”分开。
+第 11 章解决内存获取失败后保留旧容器。本章把同样的提交边界放到文件入口：存档头合法，但载荷截断时，游戏必须继续保有原状态，而不是只更新了一半生命和波次。
 
-## 12.1 文本与二进制的取舍
+## 12.1 流、文件位置与返回值
 
-文本格式容易检查、调试和迁移，例如：
+`FILE *` 是 C 标准库的流句柄，不是文件全部内容。`fopen(path, "rb")` 以二进制只读方式打开，NULL 表示打开失败；`"wb"` 会创建或截断已有文件，**不要直接用真实存档练习**。成功打开后由明确的所有者最终 `fclose`，关闭后不能再次访问该句柄。
 
-```text
-RGSAVE 1
-wave 2
-player_health 17
-enemy_count 1
-```
+`fread(buffer, element_size, count, file)` 返回读到的完整元素数。这里用 element_size=1，让返回值直接表示字节数；如果要求 8 字节却只读到 5，还要看 `ferror` 判断是否 I/O 错误，否则是提前 EOF/截断。`feof` 是一次读取已经触及末端后的状态，不是预言下一次能不能读；`while (!feof(file))` 常多处理一次无效数据。
 
-二进制通常更紧凑、解析更快，但需要明确字节序、固定宽度和版本。直接 `fwrite(&state, sizeof state, 1, file)` 会把 padding、实现相关类型布局和未初始化字节一并写入，不应当冒充长期格式。短期同一编译器的缓存可以采用，但限制必须写出来。
+`fwrite` 也返回写入元素数，缓冲写成功不代表数据已落盘；`fclose` 还可能在最终写回时失败。`fseek(file, 0L, SEEK_SET)` 请求把位置回到开头，返回 0 表示成功；读写混合的更新流在写后切换为读时需要相应定位/刷新规则，不能把指针回到开头当成理所当然。
 
-## 12.2 文件函数的返回值
+## 12.2 先定义格式，再写代码
 
+本章用极小二进制头，避免把第 8 章文本解析重复一遍。文本易手工诊断；二进制可紧凑，但并不天然更快或更安全。两者都需要版本、限长、范围和明确错误。
+
+| 字节偏移 | 含义 | 本版允许值 |
+|---|---|---|
+| 0–2 | 魔数，即识别格式的固定字节 | ASCII R、G、S |
+| 3 | 格式版本 | 1，其他拒绝 |
+| 4–5 | 生命，无符号 16 位小端 | 0–100 |
+| 6–7 | 波次，无符号 16 位小端 | 0–1000 |
+
+magic 明确采用 ASCII 编码 0x52、0x47、0x53，代码直接写数值，避免依赖宿主执行字符集是否也是 ASCII。文件必须恰好 8 个八位字节；字节 8 之后有任何数据也拒绝。小端的意思是低 8 位先保存：258 = 2 + 1×256，所以末两字节为 2、1。`(unsigned)high << 8` 先转成无符号再位移，避免依赖 signed char 或较窄有符号提升；标准保证 unsigned 至少能表示 0–65535。本例 `_Static_assert(CHAR_BIT == 8, ...)` 在非八位字节实现上直接拒绝编译，**这是显式格式边界，不是声称所有 C 实现字节都是八位**。
+
+这个最小格式没有敌人列表、校验和、加密或完整 RNG 状态，不能拿它恢复整场战斗。后续完整存档还需编码全部权威状态、ID 唯一性、种子与 RNG 当前状态，并约束对象间引用。
+
+## 12.3 完整程序：解码到候选，关闭后再提交
+
+下面保存为新临时目录中的 `save.c`。`tmpfile` 创建临时二进制更新流并在关闭时删除临时文件，因此不会覆盖个人存档。`load_and_close` 接管流，`write_save` 只借用流；函数名和注释把两个所有权契约区别开。
+
+<!-- executable: save.c -->
 ```c
-FILE *file = fopen(path, "rb");
-if (file == NULL) return RG_ERR_OPEN;
-size_t got = fread(buffer, 1, capacity, file);
-if (ferror(file)) { fclose(file); return RG_ERR_READ; }
-if (fclose(file) != 0) return RG_ERR_CLOSE;
-```
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
-`fread` 返回实际读到的元素数，不等于“没有错误”；EOF 与 I/O 错误要通过 `feof`/`ferror` 区分。写入和关闭也可能失败。错误码应让调用者决定展示、重试还是回滚，而不是低层函数只打印一句日志。
+_Static_assert(CHAR_BIT == 8, "this teaching format uses 8-bit octets");
+typedef struct { unsigned health; unsigned wave; } Save;
+typedef enum { SAVE_OK, SAVE_IO, SAVE_FORMAT, SAVE_DOMAIN } SaveResult;
 
-## 12.3 版本化与失败原子性
-
-读取存档先到临时 `candidate`：
-
-```text
-打开 → 解析 magic/version → 解析全部字段 → 检查范围与相互关系
-→ 全部成功才把 candidate 赋给 runtime
-```
-
-若 wave 解析成功但 enemy_count 越界，真实运行时必须保持不变。未知版本不能“尽量读取”并默默丢字段；应明确拒绝或有写清楚的迁移器。保存也可以先写临时文件、刷新并原子替换，具体保证随平台而变，不能把 `rename` 当跨所有文件系统的万能事务。
-
-## 12.4 错误分类与证据
-
-区分用法错误、环境错误、格式错误、领域拒绝和内部不变量破坏。命令行可把错误码映射到类别，日志包含路径（必要时仓库相对路径）、schema、seed 和操作，但不泄露私密绝对路径。损坏 fixture 应可重复运行。
-
-## 验证与游戏映射
-
-准备正常、空文件、截断、错误 magic、未知版本、负生命和重复 ID fixture；断言失败后原状态和输出参数不变。游戏映射：存档、回放、关卡配置、mod 内容和网络消息都是“外部字节进入可信状态”的边界。
-
-## 进一步拆解与实验
-
-## 12.5 文件 I/O 的逐步错误检查
-
-文件操作不是一个“读/写成功”的布尔值，至少要区分打开、读写、格式和关闭阶段。下面是**教学片段，不可独立编译**：`path`、`SaveHeader` 和 `RG_ERR_*` 是本章前文/实践中的占位定义，重点是错误分支的顺序；完整实现还要补齐这些定义并确保所有路径关闭文件。
-
-```c
-FILE *file = fopen(path, "rb");
-if (file == NULL) {
-    perror(path);             /* 解释 errno 对应的系统错误 */
-    return RG_ERR_IO;
+/* Exactly 8 octets: 'R','G','S',version,healthLE16,waveLE16. */
+static SaveResult decode(const unsigned char bytes[8], Save *out) {
+    if (bytes[0] != 0x52u || bytes[1] != 0x47u || bytes[2] != 0x53u || bytes[3] != 1u)
+        return SAVE_FORMAT;
+    Save candidate = {
+        (unsigned)bytes[4] | ((unsigned)bytes[5] << 8),
+        (unsigned)bytes[6] | ((unsigned)bytes[7] << 8)
+    };
+    if (candidate.health > 100u || candidate.wave > 1000u) return SAVE_DOMAIN;
+    *out = candidate;
+    return SAVE_OK;
 }
 
-SaveHeader header;
-if (fread(&header, sizeof header, 1, file) != 1) {
-    if (ferror(file)) { /* 设备/权限等 I/O 错误 */ }
-    if (feof(file)) {   /* 文件提前结束或截断 */ }
-    fclose(file);
-    return RG_ERR_FORMAT;
+/* Borrows a valid writable stream; caller must also check fclose. */
+static SaveResult write_save(FILE *file, Save value) {
+    if (value.health > 100u || value.wave > 1000u) return SAVE_DOMAIN;
+    unsigned char bytes[8] = {0x52u, 0x47u, 0x53u, 1u,
+        (unsigned char)(value.health & 255u),
+        (unsigned char)(value.health >> 8),
+        (unsigned char)(value.wave & 255u),
+        (unsigned char)(value.wave >> 8)};
+    return fwrite(bytes, 1u, sizeof bytes, file) == sizeof bytes ? SAVE_OK : SAVE_IO;
 }
-if (fclose(file) != 0) return RG_ERR_IO;
-```
 
-`fread` 返回“完整对象数”，不是字节数；文本函数如 `fgets` 还要处理换行和截断。错误码只能告诉调用者类别，诊断信息要保留路径、字段、偏移或版本，便于定位损坏来源。关闭也可能失败（例如写回缓冲区时），不能无条件忽略。
-
-## 12.6 版本化格式的解析顺序
-
-读取保存数据时先检查魔数（识别格式）、版本和长度，再按版本解析字段：
-
-```text
-RGSAVE 1
-wave 2
-player_health 17
-enemy_count 3
-...
-```
-
-解析器应拒绝未知版本，而不是“尽量猜”；否则未来字段变化可能被误解释为合法状态。对每个字段检查范围、重复出现、缺失和尾随垃圾。若格式允许扩展，明确未知字段是忽略还是拒绝，不能让实现细节成为隐含协议。
-
-## 12.7 临时文件与提交式保存
-
-为了避免程序在写存档中途崩溃留下半个文件，可写入同目录临时文件，完成并关闭后再用平台提供的原子替换方式提交。注意：原子替换保护的是目录项切换，不自动保证硬件断电时数据已持久化；关键存档还需考虑 flush/fsync、备份槽和损坏恢复。
-
-加载同样使用 candidate。下面仍是**依赖前文类型与解析函数的片段**，不可独立编译：
-
-```c
-RgRuntime candidate = *runtime;
-if (!parse_save(file, &candidate)) {
-    return RG_ERR_FORMAT; /* runtime 未改变 */
+/* Takes ownership of file (non-NULL); closes it on EVERY path.
+   out points to independent live storage. Failure never modifies *out. */
+static SaveResult load_and_close(FILE *file, Save *out) {
+    unsigned char bytes[8];
+    Save candidate = {0};
+    SaveResult result;
+    size_t got = fread(bytes, 1u, sizeof bytes, file);
+    if (ferror(file)) result = SAVE_IO;
+    else if (got != sizeof bytes) result = SAVE_FORMAT;
+    else {
+        int tail = fgetc(file);
+        if (ferror(file)) result = SAVE_IO;
+        else if (tail != EOF) result = SAVE_FORMAT;
+        else result = decode(bytes, &candidate);
+    }
+    if (fclose(file) != 0) result = SAVE_IO;
+    if (result == SAVE_OK) *out = candidate;
+    return result;
 }
-*runtime = candidate;
-return RG_OK;
+
+static bool check_fixture(const unsigned char *bytes, size_t size, SaveResult expected) {
+    FILE *file = tmpfile();
+    if (file == NULL) return false;
+    if (fwrite(bytes, 1u, size, file) != size || fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file); /* already failing; cleanup must not hide the failure */
+        return false;
+    }
+    Save output = {88u, 99u};
+    SaveResult actual = load_and_close(file, &output); /* file is now closed */
+    assert(actual == expected);
+    if (actual != SAVE_OK) assert(output.health == 88u && output.wave == 99u);
+    else assert(output.health == 17u && output.wave == 258u);
+    return true;
+}
+
+int main(void) {
+    const unsigned char valid[9] = {0x52u,0x47u,0x53u,1u,17u,0u,2u,1u,0u};
+    for (size_t length = 0u; length < 8u; ++length)
+        if (!check_fixture(valid, length, SAVE_FORMAT)) return 1;
+    if (!check_fixture(valid, 8u, SAVE_OK) ||
+        !check_fixture(valid, 9u, SAVE_FORMAT)) return 1;
+    unsigned char invalid[8];
+    memcpy(invalid, valid, sizeof invalid);
+    invalid[3] = 2u;
+    if (!check_fixture(invalid, sizeof invalid, SAVE_FORMAT)) return 1;
+    invalid[3] = 1u;
+    invalid[4] = 101u;
+    if (!check_fixture(invalid, sizeof invalid, SAVE_DOMAIN)) return 1;
+    invalid[4] = 17u;
+    invalid[6] = 255u; invalid[7] = 255u;
+    if (!check_fixture(invalid, sizeof invalid, SAVE_DOMAIN)) return 1;
+    invalid[0] = 0u;
+    if (!check_fixture(invalid, sizeof invalid, SAVE_FORMAT)) return 1;
+    FILE *file = tmpfile();
+    if (file == NULL) return 1;
+    Save original = {17u, 258u};
+    if (write_save(file, original) != SAVE_OK || fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return 1;
+    }
+    unsigned char encoded[8];
+    if (fread(encoded, 1u, sizeof encoded, file) != sizeof encoded ||
+        memcmp(encoded, valid, sizeof encoded) != 0 || fseek(file, 0L, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return 1;
+    }
+    Save output = {0};
+    if (load_and_close(file, &output) != SAVE_OK) return 1;
+    assert(output.health == original.health && output.wave == original.wave);
+    puts("save: all checks passed");
+    return 0;
+}
 ```
 
-若运行时包含指针、文件句柄或互斥锁，就不能简单浅拷贝，必须定义深拷贝/移动或按字段构造 candidate。这里的关键不是“复制结构体”本身，而是失败路径不半更新。
+```bash
+cc -std=c17 -Wall -Wextra -Wpedantic -Wconversion -g save.c -o save && ./save
+cc -std=c17 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined save.c -o save-san && ./save-san
+```
+
+预期 `save: all checks passed`、退出 0。不带 `-DNDEBUG`。程序先用逐字节 fixture 检验长度 0–7 的所有截断、合法长度、尾随字节、未知版本、错误魔数、生命/波次超范围，再把写出字节与独立手工 fixture 比较，最后回读。不能只做 encode→decode：如果两边都错用了大端，自洽的 round-trip 会掩盖协议错误。
+
+解码前 candidate 初始化为空；读完整、无尾部、解码及领域检查成功后，还要关闭流。**只有所有检查成功才赋给调用者输出**。检查失败时输出保持 `{88,99}`；这里按字段断言，不比较 Save 结构体填充。比较 unsigned char 编码缓冲区的 memcmp 则是比较格式定义的实际字节，含义不同。
+
+## 12.4 错误分类与资源清理
+
+- 打开、读写或关闭失败是环境/I/O 错误；未知版本、长度不符是格式错误；生命越界是领域错误。
+- 本例若先发生格式错、随后关闭又失败，最终返回 SAVE_IO；这是明确的优先级。更完整工具可以保留主错误和清理错误两个字段。
+- 已确定失败的清理分支用 `(void)fclose`，意思不是“关闭不会失败”，而是已经返回失败、不再用清理错误覆盖它。成功路径必须检查关闭结果。
+- 不能用 `perror` 解释所有错误：它打印 errno 的含义，而坏版本这种领域判断不一定设置 errno。诊断应保存错误类别、字段/偏移和格式版本，不把整个私人路径或损坏存档内容上传公共日志。
+
+本例自然执行真实文件读写及关闭，**没有稳定模拟操作系统级短写、介质故障或 fclose 失败**；这些分支要结合平台故障注入/可替换 I/O 层验证，不能从正常路径通过推出无风险。章节已把返回值和清理顺序教清，不将本地实验称为断电测试。
+
+## 12.5 三种不同的“原子性”
+
+1. **内存提交**：candidate 成功后才替换输出，失败不改旧状态。本例验证了它；若状态包含拥有的指针，浅拷贝会共享资源，需要深拷贝/转移设计。
+2. **文件名替换**：平台支持时，在目标同目录创建唯一临时文件，写完、检查刷新和关闭，再原子替换目标。路径切换前读者看旧文件，切换后看新文件；不能靠先删旧文件再 rename 获得这种保证。
+3. **断电持久性**：用户看见保存成功后，断电重启是否仍保留。`fflush` 主要把 C 缓冲交给宿主环境，不等于设备持久化。fsync 等属于平台 API，文件与目录持久化顺序、文件系统与备份恢复策略需要专门设计。
+
+C17 的 rename 对目标已存在等情形并不提供跨平台统一替换事务。这里不提供伪装成“通用可靠保存”的三行 rename 代码。游戏存档、回放、MOD 配置与服务端消息都有输入验证边界；服务器还需身份、授权和重放保护，合法二进制格式不代表可信请求。
 
 ## 本章练习
 
-### C12-Q1：为什么要先读 candidate
+### C12-Q1：第五个字节以后突然结束
 
-存档已解析前半部分，后半部分损坏。若直接写入运行时会发生什么？如何修复？
-
-<details><summary>最小提示</summary>
-
-解析状态和生效状态应该是两个对象。
-</details>
+文件含 `R G S 1 17` 后结束，旧状态 `{health=88,wave=99}`。跟踪 fread 返回值、错误类别、流所有权和最终状态。为什么不先把读到的 health 写进输出？
 
 <details><summary>讲解与验证</summary>
 
-直接写入会留下半更新状态，例如 wave 已变而敌人仍是旧集合。先解析到临时 candidate，完成版本、范围和关系校验，最后一次赋值/交换提交；失败丢弃 candidate，原状态不动。用截断 fixture 比较调用前后 checksum。游戏映射：损坏存档不能把玩家运行时置于不可恢复中间态。
+请求 8 个单字节元素却只读 5；没有 I/O 错时判为 SAVE_FORMAT。函数关闭流后返回失败，输出仍为 88/99。只更新生命会制造新旧格式混合状态，破坏失败原子性；固定输入重跑应得到相同输出。本例用 length=5 的 fixture 覆盖，不靠用户手工截断真实存档。关卡载入失败也不能留下半张新关卡。
 </details>
 
-### C12-Q2：文本存档和结构体 fwrite 怎么选
+### C12-Q2：两种测试为何不能互相替代
 
-为“同版本本地缓存”和“跨平台长期存档”分别选择方案并说明边界。
-
-<details><summary>最小提示</summary>
-
-比较可读性、布局稳定性、体积、迁移和错误诊断。
-</details>
+写出和读取函数都错误使用大端，encode→decode 的波次 258 测试通过。请写出本协议的末两字节，再设计能抓住该缺陷的判定。
 
 <details><summary>讲解与验证</summary>
 
-同版本短期缓存可直接写固定布局，但必须绑定构建/版本并能失效；跨平台长期存档应使用带 magic/schema 的明确编码，逐字段检查宽度、字节序和范围。验证改变编译器/字段顺序或截断文件。常见错误是把“本机能读回”当格式稳定。游戏映射：玩家存档和网络协议的兼容成本远高于一次文件读写。
+协议规定低字节先写，应是 2、1；大端错误会写 1、2。用独立手算 fixture 比较实际编码，再用 fixture 作为输入断言波次为 258。往返测试证明两函数在样例上互相兼容，不证明它们遵守外部格式。网络客户端与服务器实现若同抄错算法，也会与其他版本不兼容；常见错误是把自洽误当标准符合性。
 </details>
 
-下一章用预处理、警告、未定义行为和 Sanitizer 解释“偶尔正确”的代码为何仍是缺陷。
+### C12-Q3：写出成功等于保存成功吗
+
+fwrite 返回完整长度，但 fclose 返回非零；另一种情况是关闭成功后断电。分别能宣布什么，不能宣布什么？
+
+<details><summary>讲解与验证</summary>
+
+第一种必须报告 I/O 失败，不能向玩家显示可靠保存完成，因为缓冲写回可能失败。第二种只能确认库调用成功，不能由 C 标准 I/O 推出断电持久性，需要平台持久化协议与恢复测试。候选内存未修改、文件名原子替换和数据持久化是三件事。可先用正常临时文件验证编码和错误传播顺序，不伪称完成了断电演练。
+</details>
+
+## 来源与适用范围
+
+核对日期：2026-09-07。课程仍按 C17 编译；以下 N1570 是 C11 草案，仅用于核对共通条款，不冒称已读取本轮未能解密的 N2176 PDF。[WG14 C11 草案 N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)：7.21.4（rename/tmpfile）、7.21.5（打开、关闭和刷新）、7.21.8（块 I/O）、7.21.9–10（定位和错误指示器）。只核对上述语言/库契约，不把平台持久化推断当作 C 标准承诺。
+
+下一章用预处理输出、诊断器与调试器找到第一次破坏这些边界的位置。

@@ -32,7 +32,7 @@ git init
 - **验证**：`git status` 不再报告“not a git repository”；
 - **适用**：从本地新项目开始。
 
-不要在仓库的子目录里误运行 `git init`，否则会得到嵌套仓库。先用 `git rev-parse --show-toplevel` 检查仓库根目录。
+不要在教材或源码子目录里误运行 `git init`，否则会得到嵌套仓库。课程按协议创建、被主仓库忽略的 `.practice/` 独立实践仓库是有意的例外，不是让你在公开 code 目录再 init。先用 `git rev-parse --show-toplevel` 检查仓库根目录。
 
 ### `git clone`
 
@@ -71,7 +71,7 @@ git diff --cached    # 暂存区 vs 当前提交 HEAD
 git diff HEAD        # 工作区整体 vs HEAD
 ```
 
-`HEAD` 通常表示当前分支指向的提交。三个比较对象必须分清：
+`HEAD` 通常符号指向当前分支，分支再指向提交；detached HEAD 时它直接指向提交。首次提交前 HEAD 尚无可比较的提交，下述三方比较以已有基线提交为前提。三个比较对象必须分清：
 
 ```text
 HEAD -------- git diff --cached -------- 暂存区
@@ -104,7 +104,7 @@ git restore --source=<commit> path/to/file
 ```
 
 - 默认形式用暂存区版本覆盖工作区，会丢弃该文件尚未提交的编辑；
-- `--staged` 把文件移出暂存区，但保留工作区内容；
+- `--staged` 默认用 HEAD 恢复指定路径的索引条目，保留工作区内容；对已有文件是恢复旧条目，不是把所有跟踪信息删除；
 - `--source` 从指定提交取文件内容，适合恢复已知版本。
 
 运行前先 `git diff`。如果内容还可能需要，先复制到临时文件或提交到个人分支，不要凭记忆恢复。
@@ -195,6 +195,58 @@ git status
 完成后你应能解释每条命令读取或改变了哪个状态。第 3 章会加入分支、远端、fetch/pull/push，解释多人同时工作时这些本地状态如何同步。
 
 
+## 2.10 跑一次真正不同的三个版本
+
+下面完整情景只创建新临时目录。需要 Git 2.28+（用于 init -b）、Python 3，以及 bash/zsh。`Course Fixture` / `fixture.invalid` 是仅写在临时仓库里的虚构提交身份，不是实际账号；不写 global 配置，不连接外网。**保留同一个 shell 和 git_lab 变量，后续 3–5 章沿用此小情景**；也可从第 2 章重新开始，每次都是新目录。
+
+<!-- git-scenario: 02 -->
+```bash
+# Run in bash/zsh. This creates a NEW disposable repository, not the course repository.
+git_lab=$(mktemp -d)
+git init -b main "$git_lab/work"
+cd "$git_lab/work"
+git config user.name "Course Fixture"
+git config user.email "fixture.invalid"
+printf 'damage=10\ndebug=0\n' > rules.txt
+git add rules.txt
+git commit -m "Record initial combat rules"
+printf 'damage=12\ndebug=0\n' > rules.txt
+git add rules.txt
+printf 'damage=12\ndebug=1\n' > rules.txt
+git status --short
+git diff -- rules.txt
+git diff --cached -- rules.txt
+git show :rules.txt
+test "$(git show HEAD:rules.txt)" = "$(printf 'damage=10\ndebug=0\n')"
+test "$(git show :rules.txt)" = "$(printf 'damage=12\ndebug=0\n')"
+test "$(cat rules.txt)" = "$(printf 'damage=12\ndebug=1\n')"
+test "$(git status --porcelain)" = "MM rules.txt"
+# Unstage changes; do NOT discard worktree edits.
+git restore --staged -- rules.txt
+git diff --cached --exit-code
+git diff -- rules.txt
+# Preserve all edits before preparing the intentionally narrow snapshot.
+cp rules.txt "$git_lab/debug-backup.txt"
+printf 'damage=12\ndebug=0\n' > rules.txt
+git add rules.txt
+cp "$git_lab/debug-backup.txt" rules.txt
+git diff --cached -- rules.txt
+git commit -m "Increase damage without enabling debug"
+git show HEAD:rules.txt
+test "$(git show HEAD:rules.txt)" = "$(printf 'damage=12\ndebug=0\n')"
+test "$(cat rules.txt)" = "$(printf 'damage=12\ndebug=1\n')"
+git diff -- rules.txt
+# Only discard debug AFTER inspecting the backup and confirming it is not wanted.
+cat "$git_lab/debug-backup.txt"
+git restore -- rules.txt
+git status --short
+test -z "$(git status --porcelain)"
+```
+
+第一次短状态应是 `MM rules.txt`：第一列是索引相对 HEAD 的修改，第二列是工作区相对索引的修改。`git show :rules.txt` 读取索引版本，显示 damage=12/debug=0；工作区则是 12/1，HEAD 仍为 10/0。restore --staged 后索引回到 10/0、工作区仍 12/1。最后的提交只保存 12/0，调试变化仍可在 git diff 中看到；确认备份后才恢复工作区。
+
+真实工作一般用 add -p 选择 hunk（相邻改动必要时 s 拆分或 e 编辑），这里用三个确定文本版本让状态变化可重复验证。备份保留在 git_lab 根目录，不进入提交。不要只看“提交成功”或 diff --stat 判断内容正确。
+
 ## 本章练习
 
 ### T02-Q1：只提交一个目的
@@ -208,7 +260,7 @@ git status
 
 <details><summary>讲解与验证</summary>
 
-`git diff` 是工作区相对暂存区，`git add -p` 逐块复制到暂存区，`git diff --cached` 是下一次提交实际内容，`git commit` 只创建本地节点，不上传。若误暂存可 `git restore --staged path` 保留工作区。验证 `git show --name-only HEAD`。游戏映射：把规则、日志和文档拆开，便于 review/回滚。
+`git diff` 是工作区相对暂存区，`git add -p` 逐块复制到暂存区，`git diff --cached` 是下一次提交实际内容，`git commit` 只创建本地节点，不上传。若误暂存可 `git restore --staged path` 保留工作区。验证 `git show HEAD -- <file>` 的补丁或 `git show HEAD:<file>` 的完整快照；只看文件名无法证明同一文件中的调试代码没有提交。游戏映射：把规则、日志和文档拆开，便于 review/回滚。
 </details>
 
 ### T02-Q2：撤回错误暂存但保留工作区修改
@@ -221,5 +273,9 @@ git status
 
 <details><summary>讲解与验证</summary>
 
-先用 `git diff --cached` 找到错误暂存的 hunk，再用 `git restore --staged <file>` 取消该文件全部暂存，或重新使用 `git add -p` 只选规则修复。不要用不带 `--staged` 的 `git restore`，它会丢掉工作区修改。验证要同时看 `git diff`（日志仍在工作区）和 `git diff --cached`（只有规则修复），提交后再用 `git show --stat --oneline HEAD` 检查快照。边界是一个文件同时包含两类修改时，必须按 hunk 拆分；常见错误是直接 `git reset --hard` 或凭文件名判断提交内容。游戏映射：玩法规则和调试输出经常在同一文件短暂共存，分离暂存内容能让评审和回滚保持单一目的。
+先用 `git diff --cached` 找到错误暂存的 hunk，再用 `git restore --staged <file>` 取消该文件全部暂存，再使用 `git add -p` 只选规则修复；若要只撤回一个已暂存块，可用 `git restore --staged -p <file>`。不要用不带 `--staged` 的 `git restore`，它会丢掉工作区修改。验证要同时看 `git diff`（日志仍在工作区）和 `git diff --cached`（只有规则修复），提交后再用 `git show HEAD -- <file>` 检查实际补丁。边界是一个文件同时包含两类修改时，必须按 hunk 拆分；常见错误是直接 `git reset --hard` 或凭文件名判断提交内容。游戏映射：玩法规则和调试输出经常在同一文件短暂共存，分离暂存内容能让评审和回滚保持单一目的。
 </details>
+
+## 来源与适用范围
+
+核对日期：2026-09-07。使用本地 Git 2.55.0 运行章节情景；命令契约对照 Git 官方手册（[add](https://git-scm.com/docs/git-add), [restore](https://git-scm.com/docs/git-restore), [diff](https://git-scm.com/docs/git-diff)）。这些是教学工作流，不代表任何公司的内部流程。

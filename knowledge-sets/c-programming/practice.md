@@ -29,7 +29,7 @@ cd .practice/c-programming/runtime-kit
 先验证参考基线：
 
 ```bash
-make clean all
+make clean && make all
 make test
 make asan
 printf 'wave 2\nstatus\nhit 0 99\nenemy\nstatus\nquit\n' | ./arena --seed 42
@@ -37,7 +37,7 @@ printf 'wave 2\nstatus\nhit 0 99\nenemy\nstatus\nquit\n' | ./arena --seed 42
 
 ## 先独立做，再查参考
 
-下载包角色是 `reference-code`，不是留空的作业。先运行基线理解入口；随后在个人副本内保留测试，独立重写一个函数，再与参考比较。不要把原样运行参考代码算作已经会实现。本实践的最小版本覆盖固定数组、状态、解析和错误契约；动态内存、文件持久化与函数指针等能力还需要对应章节的独立验证，不能由这个固定数组项目一并证明。
+下载包角色是 `reference-code`，不是留空的作业。先运行基线理解入口；随后在个人副本内保留测试，独立重写一个函数，再与参考比较。不要把原样运行参考代码算作已经会实现。本实践的最小版本覆盖固定数组、状态、解析和错误契约；动态内存与文件读写分别由第 11–12 章的 buffer.c、save.c 做章节验证，第 13 章另检验调试器与地址错误；它们不是第二个主实践。固定数组项目不能一并证明这些能力，save.c 也不证明断电持久性。
 
 ## 明确的规则契约
 
@@ -140,7 +140,7 @@ enemy_count 2
 ## 验收
 
 ```bash
-make clean all
+make clean && make all
 make test
 make asan
 printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-a.txt

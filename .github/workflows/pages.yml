@@ -44,6 +44,11 @@ jobs:
           CC: clang
         run: python scripts/test_reference_code.py --bundles --sanitize
 
+      - name: Test executable C and Git lesson examples
+        env:
+          CC: clang
+        run: python scripts/test_lesson_examples.py --sanitize
+
       - name: Build MkDocs site
         run: mkdocs build --strict
 

@@ -21,9 +21,13 @@ void tick(int health[]) {
 
 ```c
 void tick(int *health, size_t count) {
-    for (size_t i = 0; i < count; ++i) --health[i];
+    for (size_t i = 0; i < count; ++i) {
+        if (health[i] > 0) --health[i];
+    }
 }
 ```
+
+上述都是说明数组参数的片段，不是各自独立的程序；需 `<stddef.h>` 提供 size_t，输出还需 `<stdio.h>`。tick 要求非空区间指向至少 count 个有效 int，且初始生命非负；只有正生命递减，避免把 0 变负或在 INT_MIN 上继续递减。完整运行入口见 7.8。
 
 ## 7.2 容量、长度与空区间
 
@@ -46,11 +50,11 @@ typedef struct { int *data; size_t length; size_t capacity; } IntBuffer;
 把 `i < count` 改为 `i <= count`，小数组也会写一个越界元素。普通运行可能“没崩”，这只是相邻内存暂时可写，不是合法性证明。使用 ASan：
 
 ```bash
-cc -std=c17 -Wall -Wextra -fsanitize=address -g demo.c -o demo
-./demo
+cc -std=c17 -Wall -Wextra -O0 -g -fsanitize=address search.c -o search-san
+./search-san
 ```
 
-预期报告 stack-buffer-overflow 或 heap-buffer-overflow。验证还要覆盖 0、1、恰好容量、超过容量和删除最后一个元素。
+使用第 4 章 search.c 的副本，把 find_enemy 的循环条件改为 <=，并在这份故意错误副本中暂时注释 NULL/0 断言，让缺失目标用例走到数组末尾之外，应出现 stack-buffer-overflow；若不注释，首个 NULL/0 用例会先触发空指针访问。修复 < 后恢复所有断言，确认原边界仍在测试中。不要改动公共教材源码或在无工具运行后猜越界结果。验证还要覆盖 0、1、恰好容量、超过容量和删除最后一个元素。
 
 ## 游戏映射
 
@@ -97,7 +101,7 @@ bool sum_checked(const int *values, size_t count, int *out_sum) {
 
 ## 7.7 删除策略必须和规则绑定
 
-稳定删除通常需要把后续元素左移，成本 O(n)：
+下面两个删除片段的共同前提是 `index < count <= capacity`、values 指向真实容量、元素可按值复制；空数组应先拒绝删除，不能先计算 `count - 1`。稳定删除通常需要把后续元素左移，成本 O(n)：
 
 ```c
 for (size_t i = index + 1; i < count; ++i) {
@@ -114,6 +118,65 @@ values[index] = values[count - 1];
 ```
 
 交换删除会使 ID 到索引的映射失效，任何保存索引的调用者都可能指向另一个实体。更稳妥的 API 暴露稳定 ID 或句柄，而不是承诺内部索引永久不变。每一种删除方案都要测试 `count==0`、删除首/尾/中间和连续删除。
+
+## 7.8 求和与交换删除的完整验证入口
+
+下面将 7.5 的函数与调用者组合成 `sum.c`；以 C17 编译运行，不带 `-DNDEBUG`，预期 `sum: passed`。输出只在循环结束后写入，因此中途正溢出或负溢出拒绝时仍保持旧结果 9。它不能检测虚报 count，调用者仍须保证真实内存范围。
+
+还在同一数组程序中验证连续删除、末元素删除和空集合拒绝：每轮若删除则 count 减一，否则 i 加一，因此剩余待检查数量 count-i 严格下降。把删除后也 ++i 改进去，会跳过换入的零并触发断言，而不是只能靠肉眼看输出。
+
+<!-- executable: sum.c -->
+```c
+#include <limits.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+bool sum_checked(const int *values, size_t count, int *out_sum) {
+    if (out_sum == NULL || (values == NULL && count != 0)) return false;
+    int sum = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if ((values[i] > 0 && sum > INT_MAX - values[i]) ||
+            (values[i] < 0 && sum < INT_MIN - values[i])) return false;
+        sum += values[i];
+    }
+    *out_sum = sum;
+    return true;
+}
+#include <assert.h>
+#include <stdio.h>
+/* No order guarantee; invalid index leaves both count and elements untouched.
+   items owns at least *count live ints, count points to an independent object. */
+static bool remove_swap(int *items, size_t *count, size_t index) {
+    if (count == NULL || index >= *count || items == NULL) return false;
+    items[index] = items[*count - 1u];
+    --*count;
+    return true;
+}
+int main(void) {
+    int items[] = {0, 1, 0, 0};
+    size_t count = 4u;
+    size_t i = 0u;
+    while (i < count) {
+        if (items[i] == 0) assert(remove_swap(items, &count, i));
+        else ++i; /* a moved-in element must be inspected before advancing */
+    }
+    assert(count == 1u && items[0] == 1);
+    assert(!remove_swap(items, &count, count) && count == 1u && items[0] == 1);
+    assert(remove_swap(items, &count, 0u) && count == 0u);
+    assert(!remove_swap(NULL, &count, 0u) && count == 0u);
+    int sum = 99;
+    const int normal[] = {4, -2, 7};
+    const int positive[] = {INT_MAX, 1};
+    const int negative[] = {INT_MIN, -1};
+    assert(sum_checked(NULL, 0u, &sum) && sum == 0);
+    assert(sum_checked(normal, 3u, &sum) && sum == 9);
+    assert(!sum_checked(positive, 2u, &sum) && sum == 9);
+    assert(!sum_checked(negative, 2u, &sum) && sum == 9);
+    assert(!sum_checked(NULL, 1u, &sum) && sum == 9);
+    puts("sum: passed");
+    return 0;
+}
+```
 
 ## 本章练习
 

@@ -27,7 +27,7 @@ git fetch origin
 git rebase origin/main
 ```
 
-rebase 会为每个重放提交创建新提交，所以 ID 改变。适合：
+rebase 通常为需要重放的提交创建新提交，因此父节点变化会改变 ID；已在新基底中的补丁可能被跳过，无需重放时也可能不改变历史。适合：
 
 - 个人功能分支尚未被别人基于其开发；
 - 合并前整理“小修复”“补测试”等提交；
@@ -80,7 +80,7 @@ git push
 
 ```bash
 git reflog
-git show HEAD@{1}
+git show 'HEAD@{1}'
 git branch rescue/lost-work <commit>
 ```
 
@@ -124,6 +124,123 @@ git bisect reset
 
 前提：有已知 good/bad，测试稳定返回退出码，中间提交可构建或能 `skip`。如果测试依赖当前时间、网络、脏缓存或人工判断，先缩小为稳定回归，否则二分会给出错误信心。
 
+## 4.8 冲突、放弃与恢复：必须看到引用和内容
+
+继续第 3 章的临时情景。两个分支修改同一伤害行，先触发 merge 冲突并 abort，验证回到操作前干净状态；再重做并按照明确产品规则整合。后半段在未共享分支演示 rebase 的 abort/continue、软 reset 与恢复，以及发布分支 cherry-pick/revert。
+
+<!-- git-scenario: 04 -->
+```bash
+# Continue the temporary lab; start clean, never use these on real uncommitted work.
+cd "$git_lab/work"
+test -z "$(git status --porcelain)"
+git switch -c feature/damage
+printf 'damage=15\ndebug=0\n' > rules.txt
+git add rules.txt
+git commit -m "Tune attack damage"
+git switch main
+# Make a deliberate same-line conflict, not just a mergeable appended line.
+printf 'damage=14\ndebug=0\ninvulnerability=1\n' > rules.txt
+git add rules.txt
+git commit -m "Tune baseline and add invulnerability"
+before_merge=$(git rev-parse HEAD)
+if git merge feature/damage; then
+    echo 'ERROR: expected a conflict' >&2; exit 1
+fi
+git status --short
+git show :1:rules.txt
+git show :2:rules.txt
+git show :3:rules.txt
+git merge --abort
+test "$(git rev-parse HEAD)" = "$before_merge"
+test -z "$(git status --porcelain)"
+if git merge feature/damage; then exit 1; fi
+# Product decision: attack 15 AND retain invulnerability=1.
+printf 'damage=15\ndebug=0\ninvulnerability=1\n' > rules.txt
+python3 -c 'from pathlib import Path; s=Path("rules.txt").read_text(); assert s == "damage=15\ndebug=0\ninvulnerability=1\n"'
+git diff --check
+git add rules.txt
+git commit -m "Integrate damage with invulnerability"
+git rev-list --parents -n 1 HEAD
+# An unpublished branch: rebase, abort once, then resolve and continue.
+git switch -c feature/rebase HEAD~1
+printf 'damage=16\ndebug=0\ninvulnerability=1\n' > rules.txt
+git add rules.txt
+git commit -m "Tune unpublished damage"
+before_rebase=$(git rev-parse HEAD)
+if git rebase main; then echo 'ERROR: expected rebase conflict' >&2; exit 1; fi
+git rebase --abort
+test "$(git rev-parse HEAD)" = "$before_rebase"
+if git rebase main; then exit 1; fi
+printf 'damage=16\ndebug=0\ninvulnerability=1\n' > rules.txt
+git add rules.txt
+GIT_EDITOR=true git rebase --continue
+test "$(git rev-parse HEAD)" != "$before_rebase"
+git merge-base --is-ancestor main HEAD
+# Simulate moving an UNPUBLISHED branch while preserving the complete old snapshot.
+lost=$(git rev-parse HEAD)
+git reset --soft HEAD~1
+git reflog -n 3
+git branch rescue/rebased "$lost"
+test "$(git rev-parse rescue/rebased)" = "$lost"
+git reset --soft rescue/rebased
+test -z "$(git status --porcelain)"
+# Keep the same fix on a release branch, and undo it without rewriting history.
+git switch -c release/demo main
+git cherry-pick -x rescue/rebased
+picked=$(git rev-parse HEAD)
+git revert --no-edit "$picked"
+test "$(git show HEAD:rules.txt)" = "$(git show main:rules.txt)"
+git merge-base --is-ancestor "$picked" HEAD
+git switch main
+```
+
+冲突阶段 `git show :1:rules.txt` 是共同祖先，`:2:` 是当前一侧，`:3:` 是被合并一侧。这是索引的冲突阶段条目，不是三个磁盘文件。成功 add 后它们被一个已解决的普通索引条目取代；Git 不知道“保留伤害15与无敌帧”才是需求，因此先验证内容再提交。
+
+rebase 冲突中 ours 通常是已经重放到的新基底，theirs 是当前正在重放的提交，不能凭 UI 的“当前/传入”猜原分支身份。`GIT_EDITOR=true` 只对这一次 continue 禁用交互编辑，接受已有提交说明；正常编辑说明仍应检查。
+
+本例 reset --soft 不丢工作区和索引，旧提交 ID 保存在 lost 中。真实遗失时要从 reflog 按说明/时间定位候选，再 `git show` 检查内容，建立 rescue 分支；**不要机械复制 HEAD@{1}，因为中间操作会继续改变序号**。reflog 不能救从未存入对象库的普通未提交文本。abort 从干净状态开始才容易恢复；有未提交修改时 merge --abort 不保证重建所有原始编辑。
+
+cherry-pick -x 为回移修复记录来源，依赖它的接口/数据变更仍需检查。revert 生成新抵消提交，坏提交依然是祖先。回退 merge commit 时需选择主线父节点（-m 的参数是父编号），并理解对未来重合并的影响；本例只 revert 普通提交，不把 merge 回退当成同一条简单命令。
+
+## 4.9 用稳定退出码二分真实提交图
+
+<!-- git-scenario: 04bisect -->
+```bash
+# Independent tiny history, still below git_lab; no changes to the combat lab.
+git init -b main "$git_lab/bisect"
+cd "$git_lab/bisect"
+git config user.name "Course Fixture"
+git config user.email "fixture.invalid"
+printf 'good\n' > behavior.txt
+git add behavior.txt && git commit -m "Known working behavior"
+good=$(git rev-parse HEAD)
+printf 'notes\n' > notes.txt
+git add notes.txt && git commit -m "Add harmless notes"
+printf 'bad\n' > behavior.txt
+git add behavior.txt && git commit -m "Introduce regression"
+first_bad=$(git rev-parse HEAD)
+printf 'more notes\n' >> notes.txt
+git add notes.txt && git commit -m "Change unrelated notes"
+# Keep the predicate outside the history under investigation.
+cat > "$git_lab/predicate.py" <<'PYTEST'
+from pathlib import Path
+import sys
+p = Path("behavior.txt")
+if not p.exists():
+    sys.exit(125)
+sys.exit(0 if p.read_text() == "good\n" else 1)
+PYTEST
+git bisect start HEAD "$good"
+git bisect run python3 "$git_lab/predicate.py"
+test "$(git rev-parse refs/bisect/bad)" = "$first_bad"
+git bisect reset
+cd "$git_lab/work"
+```
+
+这里有四个提交，中间第三个首次把 good 改成 bad；判定器存放在历史外，避免 checkout 到旧版本时测试本身消失。脚本断言 bisect 的 bad 引用指向已知的首次坏提交；HEAD 可能仍在最后一个接受测试的好提交，不能拿它当结果，然后 reset 离开调查状态。
+
+`git bisect run` 的约定：0=good，1–127（125 除外）=bad，125=本次无法测试而跳过，其他退出码使流程中止。127 往往是命令找不到，却会被解释成 bad，所以先确认工具存在。若编译失败不是正在调查的回归，适当返回125，而不是任意非零；跳过关键区间可能只能给出候选集合，不能伪称定位唯一提交。测试语义还应在所选区间保持可比较；修好又坏等非单调历史需要缩小区间。
+
 ## 本章决策口诀
 
 - 合并已共享历史：优先 merge；
@@ -149,7 +266,7 @@ git bisect reset
 
 <details><summary>讲解与验证</summary>
 
-共享 main 用 `git revert` 创建抵消提交，不重写历史；个人误 reset 用 `git reflog` 找旧 HEAD，再建 rescue 分支；`git reset --hard` 可能丢未提交工作。merge/rebase 冲突都要 `status`、解决、`git diff --check`、测试。游戏映射：发布回滚还要重新构建 artifact，不能只改 Git 指针。
+共享 main 用 `git revert` 创建抵消提交，不重写历史；个人误 reset 用 `git reflog` 找旧 HEAD，再建 rescue 分支；`git reset --hard` 可能丢未提交工作。merge/rebase 冲突都要 `status`、解决、`git diff --check`、测试。游戏映射：部署回滚可复用已验证的旧 artifact；若通过新 revert 提交构建新包，则需要重新验证。两者都不能只改 Git 指针就宣布部署完成。
 </details>
 
 ### T04-Q2：冲突解决后怎样证明没有丢掉意图
@@ -171,5 +288,9 @@ git bisect reset
 
 <details><summary>讲解与验证</summary>
 
-测试脚本应固定 seed、输入资源和工具版本，成功返回 0、复现回归返回非 0，并把提交、seed、日志写入临时输出；先手工确认已知好提交返回 0、已知坏提交返回非 0，再运行 `git bisect start`、标记 good/bad 和 `git bisect run ./repro.sh`。如果测试出现无法判断的退出码、依赖网络/当前时间、构建失败与逻辑失败混在一起，或工作区有未保存修改，就应先清理或 `git bisect reset`，不能把 unknown 当 bad。常见错误是用人工观察或 flaky 测试二分。游戏映射：固定 seed 的最小战斗复现能把“偶发手感问题”缩小为一个提交，并留下可回归的证据。
+测试脚本应固定 seed、输入资源和工具版本，成功返回 0、复现回归返回 1（一般 bad 范围是 1–127，125 除外），并把提交、seed、日志写入临时输出；先手工确认已知好提交返回 0、已知坏提交返回非 0，再运行 `git bisect start`、标记 good/bad 和 `git bisect run ./repro.sh`。如果测试出现无法判断的退出码、依赖网络/当前时间、构建失败与逻辑失败混在一起，或工作区有未保存修改，就应先清理或 `git bisect reset`，不能把 unknown 当 bad。常见错误是用人工观察或 flaky 测试二分。游戏映射：固定 seed 的最小战斗复现能把“偶发手感问题”缩小为一个提交，并留下可回归的证据。
 </details>
+
+## 来源与适用范围
+
+核对日期：2026-09-07。使用本地 Git 2.55.0 运行章节情景；命令契约对照 Git 官方手册（[merge](https://git-scm.com/docs/git-merge), [rebase](https://git-scm.com/docs/git-rebase), [reflog](https://git-scm.com/docs/git-reflog), [bisect](https://git-scm.com/docs/git-bisect)）。这些是教学工作流，不代表任何公司的内部流程。
