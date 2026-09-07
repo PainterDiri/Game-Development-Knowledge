@@ -92,7 +92,7 @@ graph LR
 
 ## 唯一主实践
 
-[主实践：C17 命令行房间战斗模拟器](practice.md)把固定容量数组、seed、结构体、位标志、指针参数、错误码、输入解析和测试组合起来。公开参考代码位于 `code/runtime-kit/`，但必须复制到 `.practice/c-programming/` 后再改：
+[主实践：C17 命令行房间战斗模拟器](practice.md)把固定容量数组、seed、结构体、位标志、指针参数、错误码、输入解析和测试组合起来。优先从网站下载 ZIP 到仓库外，在 `workspace/runtime-kit/` 改写；`reference/runtime-kit/` 只用于恢复和对照。已经克隆本仓库且希望就近实践时，才使用：
 
 ```bash
 python3 scripts/init_practice.py --course c-programming
@@ -100,7 +100,7 @@ git check-ignore -v .practice/c-programming
 git status --short --untracked-files=all
 ```
 
-正常情况下，第二条命中 `.practice/` 忽略规则，第三条不会列出个人实践文件。
+正常情况下，第二条命中 `.practice/` 忽略规则，第三条不会列出个人实践文件。无论哪种入口，原样运行绿色基线都不算完成；必须保留独立重写、失败测试、Sanitizer 故障注入和固定 seed 对照证据。
 
 ## 学完后的出口
 

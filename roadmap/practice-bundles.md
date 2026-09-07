@@ -16,9 +16,9 @@
 
 ## manifest
 
-有公开代码的课程使用 schema 2 `practice-bundle.json`，显式列出 `starter-code`、`reference-code`、`test-fixture`、`supporting-material`、`license` 等角色。下载包不再使用 `integration-contract` 角色。
+有公开代码的课程使用 schema 2 `practice-bundle.json`，显式列出 `starter-code` 或 `editable-baseline`、`reference-code`、`test-fixture`、`supporting-material`、`license` 等角色。下载包不再使用 `integration-contract` 角色。
 
-参考代码必须标明“只读基线”。学习者应解压到仓库外，或使用 `scripts/init_practice.py` 复制到 `.practice/<slug>/` 后再修改。
+参考代码必须标明“只读对照”。下载包应提供根目录 `START_HERE.md`，并按角色把路径压平为 `workspace/<project>/` 或 `starter/<project>/`、`reference/<project>/`、`fixtures/`、`materials/` 与 `licenses/`。默认工作流是解压到仓库外并从 `workspace/` 或 `starter/` 开始；只有已克隆本仓库的维护者/学习者才使用 `scripts/init_practice.py` 复制到 `.practice/<slug>/`。
 
 ## 验收
 

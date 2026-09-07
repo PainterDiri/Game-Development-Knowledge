@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSES = ROOT / "knowledge-sets"
 PRACTICE = ROOT / ".practice"
-COPY_ROLES = ("starter-code", "reference-code", "code", "test-fixture", "supporting-material")
+COPY_ROLES = ("starter-code", "editable-baseline", "reference-code", "code", "test-fixture", "supporting-material")
 
 
 def fail(message: str) -> int:

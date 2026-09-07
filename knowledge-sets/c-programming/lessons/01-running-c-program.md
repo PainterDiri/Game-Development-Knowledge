@@ -146,30 +146,59 @@ file hello
 
 ## 本章练习
 
-### C01-Q1：错误发生在哪一阶段
+### C01-Q1：从命令和诊断定位翻译阶段
 
-`cc main.c -o arena` 报告 `undefined reference to rg_spawn_wave`。说明阶段、最可能原因和验证步骤。
+**题型**：编译流水线分类与最小修复
+**作答产物**：三个案例的失败阶段、首条证据、修复命令和修复后产物。
 
-<details><summary>最小提示</summary>
+项目含：
 
-声明让编译器知道函数形状，定义才给链接器机器码。
-</details>
+```c
+/* runtime.h */
+int rg_spawn_wave(int count);
 
-<details><summary>讲解与验证</summary>
+/* runtime.c */
+#include "runtime.h"
+int rg_spawn_wave(int count) { return count >= 0; }
 
-这是链接失败，常见原因是实现文件未进入命令，或定义名/链接属性不一致。先分别执行 `cc -c main.c` 与 `cc -c runtime.c`，再用 `cc main.o runtime.o -o arena`。若前两步通过而最后一步成功，就证明缺少链接输入。常见错误是在头文件复制普通函数定义，继而造成多重定义。游戏映射：原生插件和平台库同样要区分头文件可见与二进制已链接。
+/* main.c */
+#include "runtime.h"
+int main(void) { return rg_spawn_wave(3) ? 0 : 1; }
+```
+
+分别判断：
+
+1. `cc -std=c17 -Wall -Wextra main.c -o arena` 报 `undefined reference to rg_spawn_wave`；
+2. 把 `main.c` 调用改成 `rg_spawn_wave(` 后编译器报 expected expression；
+3. `./arena` 能启动但返回 1（假设传入值改成 -1）。
+
+每个案例写出失败阶段、该阶段已有/没有生成的产物、下一条最小诊断或修复命令。
+
+<details><summary>讲解、判定与验证</summary>
+
+案例 1 中头文件声明使 `main.c` 可被翻译，但链接器找不到定义，属于链接失败；单独运行 `cc -std=c17 -Wall -Wextra -c main.c` 应得到 `main.o`，再执行：
+
+```bash
+cc -std=c17 -Wall -Wextra -c runtime.c
+cc main.o runtime.o -o arena
+./arena
+printf 'exit=%s\n' "$?"
+```
+
+应生成两个对象文件与可执行文件，参数 3 时退出 0。案例 2 是编译/语法诊断，`main.o` 不能由该源成功更新；先修复表达式，再重新编译，不能去调链接选项。案例 3 已完成预处理、编译、链接和加载，是程序语义产生的运行结果；用退出码、输入与调试/日志定位，不能称为“编译器坏了”。
+
+评分点：三类阶段正确；说明对象文件和可执行文件是否存在不能只看旧文件——应清理或核对时间/hash；案例 1 把 `runtime.c` 纳入链接；案例 3 区分非零业务返回与崩溃。常见错误是在头文件放普通函数定义以“解决”未定义引用，随后在多翻译单元产生多重定义。游戏映射：原生插件、平台 SDK 和服务器模块都可能出现“声明可见但实现未链接”；稳定诊断必须先判断失败在哪个阶段。
 </details>
 
 ### C01-Q2：设计可脚本化的失败
 
+**题型**：短代码与接口设计
+**作答产物**：满足给定签名/错误契约的代码或伪代码，以及最小测试。
+
 为“缺少 seed 参数”设计 stdout、stderr 和退出码，并说明怎样自动验证。
 
-<details><summary>最小提示</summary>
 
-正常结果与诊断分流，脚本同时断言文本和 `$?`。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 把用法写入 `stderr`，不产生正常结果，返回约定的非零码（例如 2）。运行 `./arena >out 2>err; test $? -eq 2; test ! -s out; grep -q usage err`。边界是退出码空间有限，详细错误仍需文本或结构化报告。常见错误是打印错误却返回 0，导致 CI 把失败当成功。游戏映射：构建和内容校验器必须能被流水线可靠判定。
 </details>

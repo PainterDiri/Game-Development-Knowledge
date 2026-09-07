@@ -3,12 +3,25 @@
   "downloadType": "practice-code",
   "slug": "toolchain-and-git",
   "title": "游戏开发工具链与可复现工程",
-  "bundleName": "toolchain-and-git-code",
+  "bundleName": "toolchain-and-git-practice",
+  "quickStart": [
+    "cd workspace/repro-game",
+    "python3 -m unittest discover -s tests -v",
+    "python3 src/build.py --output dist --seed 42",
+    "python3 dist/game.py --seed 42"
+  ],
   "include": [
     {
       "path": "code/repro-game",
+      "target": "repro-game",
+      "role": "editable-baseline",
+      "description": "解压后直接编辑的绿色基线；从这里完成 Git、构建、故障注入与回滚练习"
+    },
+    {
+      "path": "code/repro-game",
+      "target": "repro-game",
       "role": "reference-code",
-      "description": "可运行的 Python 确定性房间生成、构建和测试基线"
+      "description": "重新解压或比较差异时使用的只读参考基线"
     }
   ],
   "exclude": [

@@ -11,7 +11,7 @@
 - 课程索引、目录与状态一致；
 - 完成课程不得存在 `assessments.md`、`assessments/`、`references/`、`integration-contract.md` 或 `lessons/00-course-map.md`；
 - 完成课程每个实质性章节至少有 1 道带唯一 ID 的章末练习；题量不设固定上下限，必须与章节知识密度和学习产出相称；
-- 每道练习都有完整讲解 `<details>`；最小提示 `<details>` 可选，不得因为缺少提示而报错；
+- 每道练习写明 `题型` 与 `作答产物`，并有完整的“讲解、判定与验证” `<details>`；出现“最小提示”或其他提示折叠块应报错；
 - 练习 ID 在全课程唯一，且题面、提示（如有）、讲解在同一章节相邻；
 - `practice.md` 包含“最小版本”“分阶段指导”“验收”“常见失败”“Git 隔离”，并给出 `init_practice.py`、`git check-ignore` 和 `git status`；
 - 公开代码有运行方式，下载包可解压且不含缓存、个人状态、秘密或绝对路径；

@@ -255,38 +255,78 @@ cd "$git_lab/work"
 
 ## 本章练习
 
-### T04-Q1：选择恢复命令
+### T04-Q1：按共享边界选择恢复方法
 
-共享 main 上的坏提交已被他人拉取；本地未共享分支误 reset。分别选择命令。
+**题型**：双场景提交图诊断与恢复实作
+**作答产物**：每个场景的命令、恢复前后提交图、工作树/历史影响和验证证据。
 
-<details><summary>最小提示</summary>
+分别处理两个互不相关的场景：
 
-共享历史与个人未共享历史的答案不同。
-</details>
+**场景 A：共享历史**
 
-<details><summary>讲解与验证</summary>
+```text
+A---B---C  main, origin/main
+```
 
-共享 main 用 `git revert` 创建抵消提交，不重写历史；个人误 reset 用 `git reflog` 找旧 HEAD，再建 rescue 分支；`git reset --hard` 可能丢未提交工作。merge/rebase 冲突都要 `status`、解决、`git diff --check`、测试。游戏映射：部署回滚可复用已验证的旧 artifact；若通过新 revert 提交构建新包，则需要重新验证。两者都不能只改 Git 指针就宣布部署完成。
+C 是已被队友拉取的坏规则提交，B 对应的发布包仍可用。要求保留审计历史，并让 main 的内容撤销 C。
+
+**场景 B：仅本地误操作**
+
+你在未共享分支上原有 `D---E`，误执行 `git reset --hard D` 后 E 从普通日志消失，且操作后尚未运行会清理 reflog 的命令。要求恢复到 E。
+
+为每个场景给出步骤；说明什么时候需要先建救援分支，以及为什么 A 不能用强推、B 不能直接凭记忆重写 E。
+
+<details><summary>讲解、判定与验证</summary>
+
+场景 A 先确认工作树和目标提交，再创建反向提交：
+
+```bash
+git status --short
+git show --stat C
+git revert C
+# 解决冲突时：编辑 → git add → git revert --continue
+git diff --check
+git test-or-project-command
+git log --graph --oneline --decorate -5
+```
+
+结果近似 `A---B---C---R`，R 的补丁抵消 C。历史仍说明 C 曾发生以及何时被撤销；普通 push 不破坏队友已有提交。线上回滚若直接复用 B 的已验证 artifact，还要另记录部署目标与兼容性，Git revert 本身不等于部署完成。
+
+场景 B 先从 reflog 找到 E，再固定它：
+
+```bash
+git reflog --date=local
+# 假设确认 E 的对象名是 <e-sha>
+git branch rescue/e <e-sha>
+git switch feature-branch
+git reset --hard <e-sha>
+git log --graph --oneline --decorate -5
+```
+
+若当前工作树在误 reset 后又有新改动，先 `git status`，将其提交到临时分支或另行备份，再执行 hard reset。也可直接切到救援分支后决定如何合并。评分点：A 使用新增历史的 revert，B 使用 reflog 找对象并先固定引用；写明冲突/脏工作树处理；验证内容与图。常见错误是对共享 main `reset --hard` 后强推，或还没确认对象就继续做大量历史重写。游戏映射：共享代码修复需要可审计反向变更；本地丢失提交则依赖 Git 对对象与引用移动的记录，两者与“将线上服务器切回旧 artifact”又是不同状态层。
 </details>
 
 ### T04-Q2：冲突解决后怎样证明没有丢掉意图
 
+**题型**：冲突诊断与回归验证
+**作答产物**：保留双方意图的结果、最小 diff 与覆盖两个意图的测试。
+
 冲突文件同时包含“提高伤害”和“修复无敌帧”两方修改。你手工删掉冲突标记后，下一步不能只执行 `git add`。请列出恢复意图、验证和完成整合的顺序。
 
-<details><summary>最小提示</summary>
-先读双方提交和冲突上下文，再验证行为；冲突标记消失不等于语义正确。
-</details>
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 先用 `git diff --cc`、`git log -p` 和双方分支的测试理解两项修改，再编辑文件保留两项兼容意图，搜索 `<<<<<<<` 等残留标记，运行针对伤害和无敌帧的回归测试，确认工作区差异后才 `git add`，最后在 merge 中提交或在 rebase 中 `git rebase --continue`。边界是两项修改可能确实互相矛盾，此时要由规则优先级决定取舍，不能机械拼接文本。常见错误是选择“当前/传入”版本后跳过测试，或误把生成文件冲突当成源文件冲突。验证证据包括测试退出码、关键输入和最终 diff；游戏映射：资产 GUID、能力配置和战斗规则冲突都可能文本可合并但行为错误，必须以运行时不变量验收。
 </details>
 
 ### T04-Q3：`bisect` 为什么需要稳定的判定器
 
+**题型**：算法推演与测试设计
+**作答产物**：搜索区间推演表、稳定判定器和一次错误判定的后果。
+
 某个战斗回归只在随机 seed=42 且无图形界面时出现。请说明如何把它改造成 `git bisect run` 可以使用的测试入口，并指出什么情况下应中止二分。
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 测试脚本应固定 seed、输入资源和工具版本，成功返回 0、复现回归返回 1（一般 bad 范围是 1–127，125 除外），并把提交、seed、日志写入临时输出；先手工确认已知好提交返回 0、已知坏提交返回非 0，再运行 `git bisect start`、标记 good/bad 和 `git bisect run ./repro.sh`。如果测试出现无法判断的退出码、依赖网络/当前时间、构建失败与逻辑失败混在一起，或工作区有未保存修改，就应先清理或 `git bisect reset`，不能把 unknown 当 bad。常见错误是用人工观察或 flaky 测试二分。游戏映射：固定 seed 的最小战斗复现能把“偶发手感问题”缩小为一个提交，并留下可回归的证据。
 </details>

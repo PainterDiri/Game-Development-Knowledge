@@ -148,30 +148,55 @@ cc -std=c17 -Wall -Wextra -Wpedantic -Wconversion types.c -o types
 `条件 ? 值A : 值B` 只计算被选中的一侧。生命为 2、伤害为 5 时直接选 0，不先做减法；生命为 20、伤害为 3 时才算 17。先手推 `hp=20/max=20/damage=3`、`hp=2/damage=5`、`damage=-1`，结果分别是成功且 17、成功且 0、失败且 hp 不变。这里不需要提前掌握指针运算，第 5 章解释按值调用，第 9 章再扩展地址与生命周期。
 ## 本章练习
 
-### C02-Q1：初始化不变量
+### C02-Q1：未初始化累计值为何没有可推演结果
 
-函数里声明 `int total_damage;`，随后在循环中执行 `total_damage += hit;`。为什么即使偶尔得到正确结果也不合法？
+**题型**：状态追踪、语言边界与修复测试
+**作答产物**：三轮循环表、指出首个非法读取、修复代码和边界测试。
 
-<details><summary>最小提示</summary>
+分析：
 
-第一次 `+=` 同时包含一次读取和一次写入。
-</details>
+```c
+int sum_hits(const int hits[3]) {
+    int total_damage;
+    for (size_t i = 0; i < 3; ++i) {
+        total_damage += hits[i];
+    }
+    return total_damage;
+}
+```
 
-<details><summary>讲解与验证</summary>
+输入为 `{4, 0, 7}`。不要根据某次机器输出填写“total_damage 最终值”。画出 `i`、`hits[i]`、需要读取的旧值、写回值四列，并在无法由 C 语义继续推演的位置停止。然后修复函数，并补一个能区分正确初始化与“碰巧栈为零”的测试。
 
-`+=` 需要读取旧值，而自动对象 `total_damage` 尚未初始化，读取不确定值会导致未定义行为。修复为 `int total_damage = 0;`，并测试空命中列表时结果仍为 0。常见错误是依赖 debug 构建恰好把栈填零。游戏映射：帧统计、累计伤害和资源计数器若无明确初值，会产生难复现的幽灵状态。
+<details><summary>讲解、判定与验证</summary>
+
+在 `i=0` 时，`+=` 等价于需要读取 `total_damage` 的旧值再加 4；该自动对象未初始化，首轮就发生非法的未初始化读取，因此“写回值”以及后续全部状态都没有由 C 语义规定的确定答案。不能把调试构建中观察到 11 当作推演结果，也不能用三次运行一致证明合法。
+
+修复：
+
+```c
+int sum_hits(const int hits[3]) {
+    int total_damage = 0;
+    for (size_t i = 0; i < 3; ++i) {
+        total_damage += hits[i];
+    }
+    return total_damage;
+}
+```
+
+修复后的表为 `(i, hit, old, new)`：`(0,4,0,4)`、`(1,0,4,4)`、`(2,7,4,11)`。测试至少断言 `{4,0,7}→11` 与 `{0,0,0}→0`；更通用 API 还应接收长度并测试空区间，且若输入范围可大到溢出，应采用更宽类型或定义溢出策略。
+
+评分点：在首个未初始化读取处停止，不虚构初值；修复后逐轮状态正确；测试含零/空边界与非零组合。常见错误是用 `memset` 整个复杂对象掩盖初始化设计，或认为“编译器没报警”就合法。游戏映射：累计伤害、帧统计、掉落权重和在线房间人数都必须有明确初态，否则会形成不可复现的幽灵状态。
 </details>
 
 ### C02-Q2：类型与单位边界
 
+**题型**：类型建模与边界判定
+**作答产物**：类型/单位选择表、允许范围和一次错误转换示例。
+
 `float cooldown = 120;` 无法判断 120 是秒、毫秒还是帧。给出两种改善接口的方法及其取舍。
 
-<details><summary>最小提示</summary>
 
-先改善命名，再考虑用结构体或只允许构造函数创建值。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 最低成本是命名 `cooldown_frames` 或 `cooldown_seconds`；更强的做法是定义 `typedef struct { float seconds; } Duration;` 并通过 `duration_from_seconds` 创建。前者简单但仍可能误传，后者增加样板却能在 API 评审中暴露单位。用编译期类型错误或边界测试验证。游戏映射：移动速度、动画时间、网络 tick 与物理步长常因单位混淆出现数量级错误。
 </details>

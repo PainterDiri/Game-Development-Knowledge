@@ -251,27 +251,64 @@ test -z "$(git status --porcelain)"
 
 ### T02-Q1：只提交一个目的
 
-工作区同时有规则修复和调试日志，只提交规则修复。
+**题型**：Git 三状态推演与命令实作
+**作答产物**：完整命令序列；执行前后 `status/diff` 预测；最终提交内容证明。
 
-<details><summary>最小提示</summary>
+仓库初始干净。你同时做了这些修改：
 
-先看 `git diff`，再用 `git add -p`。
-</details>
+```text
+ M src/rules.py       # 同一文件内既有伤害公式修复，也有临时 print
+ M tests/test_rules.py
+?? debug-wave.log
+```
 
-<details><summary>讲解与验证</summary>
+目标提交只能包含“伤害公式修复 + 对应测试”，但工作区必须保留临时 `print` 和 `debug-wave.log` 供后续诊断。写出从检查到提交的命令序列，并在以下三个时刻预测：
 
-`git diff` 是工作区相对暂存区，`git add -p` 逐块复制到暂存区，`git diff --cached` 是下一次提交实际内容，`git commit` 只创建本地节点，不上传。若误暂存可 `git restore --staged path` 保留工作区。验证 `git show HEAD -- <file>` 的补丁或 `git show HEAD:<file>` 的完整快照；只看文件名无法证明同一文件中的调试代码没有提交。游戏映射：把规则、日志和文档拆开，便于 review/回滚。
+1. 第一次选择性暂存后，`git diff --cached` 应含什么；
+2. 提交后，`git status --short` 应显示什么；
+3. 用什么命令证明同一文件中的临时 `print` 没进入提交。
+
+若误把 `src/rules.py` 全部暂存，给出不丢工作区修改的恢复步骤。
+
+<details><summary>讲解、判定与验证</summary>
+
+一种可执行顺序：
+
+```bash
+git status --short
+git diff -- src/rules.py tests/test_rules.py
+git add -p src/rules.py
+git add tests/test_rules.py
+git diff --cached --check
+git diff --cached
+git commit -m "fix damage calculation"
+git status --short
+git show --format=fuller --patch HEAD -- src/rules.py tests/test_rules.py
+```
+
+在 `git add -p` 中只接受公式 hunk，拒绝或拆分包含临时 `print` 的 hunk。第一次暂存后，cached diff 应只有公式和测试；`debug-wave.log` 从未暂存。提交后，预期至少仍有 ` M src/rules.py` 与 `?? debug-wave.log`；若测试文件没有额外修改则不再出现。`git show --patch HEAD -- src/rules.py` 直接证明提交中的具体 hunk，不能只看 `--stat`。
+
+若整文件误暂存：
+
+```bash
+git restore --staged src/rules.py
+git add -p src/rules.py
+git diff -- src/rules.py
+git diff --cached -- src/rules.py
+```
+
+前一个 diff 应保留未暂存的临时 `print`，后一个只含规则修复。也可用 `git restore --staged -p` 只撤一个 staged hunk。评分点：检查工作树、选择性暂存、检查索引、提交、检查提交对象五步齐全；明确 `git commit` 只提交索引快照；误操作恢复不使用 `git reset --hard` 或不带 `--staged` 的 `git restore`。边界：两个意图若混在同一行，先编辑拆开或用补丁编辑，不能假装 hunk 天然可分。游戏映射：规则修复、临时遥测和生成日志经常同时存在，原子提交能让代码评审和线上回滚只改变一个目的。
 </details>
 
 ### T02-Q2：撤回错误暂存但保留工作区修改
 
+**题型**：命令实作与恢复
+**作答产物**：可执行命令序列、保留/丢弃的数据说明和恢复验证。
+
 你已经用 `git add -p` 暂存了规则修复，但误把调试日志也放进暂存区。要求：保留工作区里的日志，下一次提交不能包含它。应使用哪些命令，怎样验证？
 
-<details><summary>最小提示</summary>
-目标是只改变暂存区，不要把工作区文件恢复成 HEAD。
-</details>
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 先用 `git diff --cached` 找到错误暂存的 hunk，再用 `git restore --staged <file>` 取消该文件全部暂存，再使用 `git add -p` 只选规则修复；若要只撤回一个已暂存块，可用 `git restore --staged -p <file>`。不要用不带 `--staged` 的 `git restore`，它会丢掉工作区修改。验证要同时看 `git diff`（日志仍在工作区）和 `git diff --cached`（只有规则修复），提交后再用 `git show HEAD -- <file>` 检查实际补丁。边界是一个文件同时包含两类修改时，必须按 hunk 拆分；常见错误是直接 `git reset --hard` 或凭文件名判断提交内容。游戏映射：玩法规则和调试输出经常在同一文件短暂共存，分离暂存内容能让评审和回滚保持单一目的。
 </details>

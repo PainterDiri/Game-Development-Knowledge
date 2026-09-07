@@ -142,30 +142,51 @@ int main(void) {
 不带 -DNDEBUG 编译；输出 `points=7` 与 `ratio=0.50`，并断言组合位、重复清除和未知标签拒绝。调用契约是非空指针且 tag 与最后写入的载荷一致；default 只能拒绝未知 tag，不能检测“合法 tag 搭配错误成员”。C 的 union 表示重解释另有语言细则，可能遇到陷阱表示，本课程不以它实现跨类型位转换。游戏配置应在解析成功时一起写入标签与载荷，不允许 UI 单独修改标签。
 ## 本章练习
 
-### C10-Q1：enum 还是 bit flags
+### C10-Q1：枚举状态与可组合位标志
 
-“敌人种类”和“敌人同时中毒、精英、可攻击”分别应使用什么表示？
+**题型**：位运算计算与类型建模
+**作答产物**：十六进制中间结果；4 行状态表；enum/flags 选择说明。
 
-<details><summary>最小提示</summary>
+定义：
 
-前者通常互斥，后者可以同时成立。
-</details>
+```c
+enum EnemyFlags {
+    ENEMY_ALIVE   = 1u << 0, /* 0x01 */
+    ENEMY_ELITE   = 1u << 1, /* 0x02 */
+    ENEMY_BURNING = 1u << 2, /* 0x04 */
+    ENEMY_FROZEN  = 1u << 3  /* 0x08 */
+};
+```
 
-<details><summary>讲解与验证</summary>
+初始 `uint32_t flags = ENEMY_ALIVE | ENEMY_ELITE;`。依次执行：
 
-种类用 enum，强制或至少表达 normal/elite/boss 的单一选择；可组合属性用无符号 bit flags，通过 `|` 添加、`&` 检查、`& ~mask` 清除。验证未知值拒绝、组合值保留各位。常见错误是把 enum 数字当位掩码。游戏映射：状态效果可组合，职业/敌人 archetype 通常是主类别。
+```c
+flags |= ENEMY_BURNING;
+flags &= ~ENEMY_ALIVE;
+flags ^= ENEMY_FROZEN;
+flags ^= ENEMY_FROZEN;
+```
+
+每一步写出十六进制结果，并分别用表达式判断 elite/alive。再回答：敌人的 AI 阶段 `Idle/Chase/Attack/Dead` 应使用互斥 enum 还是 flags？为什么“清除 frozen”不应使用 XOR？
+
+<details><summary>讲解、判定与验证</summary>
+
+初始为 `0x01|0x02 = 0x03`。加入 burning 后 `0x07`；清除 alive 后 `0x06`；第一次切换 frozen 后 `0x0E`；第二次切换后回到 `0x06`。检查 elite：`(flags & ENEMY_ELITE) != 0u` 为真；检查 alive：`(flags & ENEMY_ALIVE) != 0u` 为假。不要写 `flags == ENEMY_ELITE` 来判断 elite，因为同时 burning 时总值不是 0x02。
+
+AI 阶段一次只能处于一个主状态，宜用互斥 enum，并额外验证值域/转换；alive、elite、burning、frozen 可以组合，适合 flags。清除 frozen 应写 `flags &= ~ENEMY_FROZEN`，无论原来是否设置，结果都确定为未设置；XOR 是切换，原来未设置时反而会把它加上，不满足“清除”的后置条件。
+
+评分点：五个状态值正确；检查表达式使用掩码非零；建模依据是互斥性而不是“哪个写法短”；区分 set/clear/toggle。边界：`~` 会在提升后的整数宽度翻转全部位，赋回无符号目标通常按位截断；项目可用明确无符号掩码并限制合法位。游戏映射：控制状态机用 enum，状态效果与碰撞层常用 flags；混淆后会制造“不可能状态”或错误清除 buff。
 </details>
 
 ### C10-Q2：结构体能否直接写文件
 
+**题型**：布局计算与序列化反例
+**作答产物**：字段/对齐推演、不可移植原因和显式格式方案。
+
 `fwrite(&enemy, sizeof enemy, 1, file)` 是否适合作为长期跨平台存档？
 
-<details><summary>最小提示</summary>
 
-考虑 padding、字节序、类型宽度、版本和未初始化字节。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 默认不适合稳定格式。布局、padding、字节序、字段宽度、编译器和新增字段都会改变读取含义；短写也必须检查。短期同构建缓存可以接受，但应写限制。稳定存档逐字段编码固定宽度并带 magic/schema/range 校验。用截断文件、错误版本和另一种布局测试。游戏映射：存档、回放和网络协议都要把内存布局与外部格式分开。
 </details>

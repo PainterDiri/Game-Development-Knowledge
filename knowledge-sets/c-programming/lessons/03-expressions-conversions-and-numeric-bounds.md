@@ -206,33 +206,61 @@ int main(void) {
 
 ### C03-Q1：容量检查为何写成减法
 
+**题型**：边界计算与代码修复
+**作答产物**：逐步算式、溢出边界、修复代码和边界测试。
+
 在 `used <= capacity` 前提下，解释 `requested > capacity - used` 为什么比 `used + requested > capacity` 更稳妥，并指出前提失效时会怎样。
 
-<details><summary>最小提示</summary>
 
-比较两式在加法超出 `size_t` 上限时的行为。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 无符号加法会回绕，危险表达式可能变小而错误放行；减法在已知 `used <= capacity` 时保持合法范围。若 `used > capacity`，减法也会回绕，所以入口必须先验证内部不变量。用 `SIZE_MAX` 附近的值写单元测试。常见错误是只测试小容量。游戏映射：对象池、网络包、资源缓冲区都用同类检查。
 </details>
 
-### C03-Q2：百分比为何变成零
+### C03-Q2：整数比例、舍入与溢出
 
-`int percent = current / maximum * 100;` 在 `1/2` 时得到 0。给出整数版和浮点版修复，并比较溢出与舍入。
+**题型**：逐表达式类型计算与边界设计
+**作答产物**：4 组输入的结果表；两种实现；除零、舍入和溢出契约。
 
-<details><summary>最小提示</summary>
+比较下面三种写法，假设 `current`、`maximum` 是非负 `int`：
 
-改变乘除顺序会保留整数精度，但可能扩大中间值。
-</details>
+```c
+A: int p = current / maximum * 100;
+B: int p = current * 100 / maximum;
+C: float p = (float)current / (float)maximum * 100.0f;
+```
 
-<details><summary>讲解与验证</summary>
+对 `(1,2)`、`(2,3)`、`(3,2)`、`(INT_MAX, INT_MAX)` 写出 A/B 在 C 语义有定义时的精确整数结果；遇到未定义行为必须标出，不能虚构数值。另写出 C 的数学期望附近值，并指出哪一步可能除零或有符号溢出。然后给出：
 
-整数版可写 `current * 100 / maximum`，但要先保证 `maximum != 0` 并防止乘法溢出；可提升到更宽类型。浮点版写 `(float)current / (float)maximum * 100.0f`，能表示小数但有舍入误差。测试 0、1/2、等于最大值和接近上限。游戏映射：血条显示可用浮点比率，权威资源结算通常更适合有明确舍入规则的整数。
+- 一个返回 0–100、向下取整并避免中间乘法溢出的整数 API；
+- 一个允许超过 100% 的浮点 API。
+
+<details><summary>讲解、判定与验证</summary>
+
+A 先做整数除法：`1/2→0`、`2/3→0`、`3/2→1`、`INT_MAX/INT_MAX→1`，再乘 100，结果分别 0、0、100、100。B 对前三组分别得到 50、66、150；`INT_MAX * 100` 先发生有符号溢出，因此第四组是 UB，没有可写出的精确整数结果。更一般地，只要 `current > INT_MAX / 100`，B 就在除法前失效。C 约为 50.0、66.666…、150.0、100.0，受浮点舍入影响。三式在 `maximum==0` 时都非法或产生非有限结果，必须先定义契约。
+
+一种整数实现：
+
+```c
+#include <stdint.h>
+#include <stdbool.h>
+
+bool percent_floor_0_100(int current, int maximum, int *out) {
+    if (out == NULL || maximum <= 0 || current < 0) return false;
+    int clamped = current > maximum ? maximum : current;
+    int64_t scaled = (int64_t)clamped * 100;
+    *out = (int)(scaled / maximum);
+    return true;
+}
+```
+
+浮点版可返回 `false`/错误码并通过输出参数写 `(float)current / maximum * 100.0f`，不夹到 100；仍需限定非负输入与正分母。评分点：A 的四行、B 的三个合法结果和一个 UB 判断正确；明确 B 先溢出再除并不安全；写出分母、范围、舍入与失败时输出是否保持不变。验证用 0、1/2、2/3、相等、超过上限和 `INT_MAX`。游戏映射：UI 血条通常夹到 100%，而护盾叠层或伤害倍率可能允许超过 100%；显示值与权威结算应分别定义类型和舍入。
 </details>
 
 ### C03-Q3：优先级不等于求值顺序
+
+**题型**：代码追踪与反例
+**作答产物**：求值/副作用顺序表、可保证结论和一个反例。
 
 下面代码试图从两个连续位置取值并推进索引：
 
@@ -242,7 +270,7 @@ int total = values[i++] + values[i++];
 
 请判断这段代码是否有可移植的确定结果，指出风险来自哪里，再给出一个更容易审查的改写。
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 加法的语法分组由运算符优先级决定，但两个 `i++` 之间没有足够的顺序关系；同一个标量在一个完整表达式中被多次修改而没有序列点，程序触及未定义行为，不能从一次运行结果推断规则。先检查 `i <= count && count - i >= 2`，再依次读取 `values[i]`、`values[i + 1]`。还需证明两个 int 相加不会溢出，才能计算 total 并最后执行 `i += 2`。数组必须真实包含 count 个有效元素；索引检查不替代对象有效期。边界是 `count` 小于 2、`i` 接近 `SIZE_MAX` 以及读取与推进分到不同阶段后的失败路径；常见错误是只加括号就以为改变了求值顺序。验证可用 `-Wall -Wextra`、Sanitizer 和 count=0/1/2 的测试。游戏映射：输入游标、伤害事件队列和 RNG 消费若把副作用藏在表达式中，会破坏重放和调试的可解释性。
 </details>

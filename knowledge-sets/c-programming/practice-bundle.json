@@ -3,15 +3,32 @@
   "downloadType": "practice-code",
   "slug": "c-programming",
   "title": "C 程序设计基础及实验（游戏底层版）",
-  "bundleName": "c-programming-code",
+  "bundleName": "c-programming-practice",
+  "quickStart": [
+    "cd workspace/runtime-kit",
+    "make clean all",
+    "make test",
+    "printf 'wave 2\\nstatus\\nquit\\n' | ./arena --seed 42"
+  ],
   "include": [
     {
       "path": "code/runtime-kit",
+      "target": "runtime-kit",
+      "role": "editable-baseline",
+      "description": "解压后直接编辑的绿色 C17 基线；按实践要求删除、重写并补测指定函数"
+    },
+    {
+      "path": "code/runtime-kit",
+      "target": "runtime-kit",
       "role": "reference-code",
-      "description": "固定容量、确定性 seed、错误码和 Sanitizer 测试的 C17 运行时参考基线"
+      "description": "比较契约、恢复文件和核对测试时使用的只读参考实现"
     }
   ],
   "exclude": [
+    "arena",
+    "arena_asan",
+    "test_cli",
+    "test_cli_asan",
     "test_runtime",
     "test_runtime_asan",
     "__pycache__"

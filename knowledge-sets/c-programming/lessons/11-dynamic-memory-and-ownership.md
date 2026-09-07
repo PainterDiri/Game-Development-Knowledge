@@ -136,29 +136,63 @@ cc -std=c17 -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined buffer.c -o
 
 ## 本章练习
 
-### C11-Q1：失败后四项状态是什么
+### C11-Q1：`realloc` 失败后的四项状态
 
-容器有 `[7]`、count=1、capacity=1。把 reserve 中的 candidate 改成直接写 `buffer->items = resize_bytes(...)`，然后触发 should_fail=true。指出丢失的资源、其他字段为何不再可信，写出恢复正确契约的顺序。requested=0 应怎么处理？
+**题型**：动态内存状态表与失败原子性
+**作答产物**：两种写法的逐步状态表；安全实现；失败注入断言。
 
-<details><summary>讲解与验证</summary>
+初始：`data` 指向含 `{10,20}` 的 2 个 `int`，`length=2`、`capacity=2`。需要扩到 4。比较：
 
-直接写 NULL 丢失唯一拥有的旧地址，原块未释放却再也无法由容器释放；count/capacity 仍为 1，与空指针矛盾。先检查字节溢出，再用 candidate 接收；NULL 时不写任何字段，非 NULL 才提交指针与容量，count 不变。0 请求在不超过现容量时直接成功，不调用零大小 realloc。运行本文失败注入断言应保留原地址、7、1、1。常见错误是只保留 count 而没有保留资源所有权；服务器缓存扩容失败也必须保留可用旧数据。
+```c
+/* A */ data = realloc(data, 4 * sizeof *data);
+/* B */ int *candidate = realloc(data, 4 * sizeof *data);
+```
+
+假设分配失败并返回 `NULL`。分别填写 `data`、旧分配是否仍拥有、`length`、`capacity`、元素值还能否访问。然后写出只有成功时才提交指针和 capacity 的 `grow_to_four` 核心代码，并定义 `realloc(ptr, 0)` 不进入本函数的原因。
+
+<details><summary>讲解、判定与验证</summary>
+
+A 直接覆盖唯一指针：`data` 变为 NULL，旧分配按照 `realloc` 失败契约仍存在，但程序已丢失其地址，形成泄漏；若代码提前把 capacity 改为 4，还会产生元数据谎言。length/capacity 若尚未修改仍是 2/2，但元素因指针丢失而无法再合法访问。
+
+B 中 `candidate=NULL`，原 `data` 仍指向旧分配，length=2、capacity=2、值 `{10,20}` 都保持有效。安全核心：
+
+```c
+bool grow_to_four(int **data, size_t length, size_t *capacity) {
+    if (data == NULL || capacity == NULL || length > *capacity) return false;
+    if (*capacity >= 4) return true;
+    int *candidate = realloc(*data, 4 * sizeof **data);
+    if (candidate == NULL) return false;
+    *data = candidate;
+    *capacity = 4;
+    return true;
+}
+```
+
+真实通用实现还必须在乘法前检查 `new_capacity > SIZE_MAX / sizeof **data`，并说明 `*data==NULL` 是否允许。这里目标容量固定为 4 且非零，故不触发 `realloc(ptr,0)` 的实现差异/释放语义；通用函数应把请求 0 独立定义为 no-op 或显式 free，而不是交给 realloc 模糊处理。
+
+失败注入断言：返回 false；data 地址与旧地址相同；length/capacity 不变；两个元素逐值不变；旧块最终仍由调用者 free。评分点：区分指针变量、分配对象和元数据；失败不覆盖原指针；成功后才提交 capacity。常见错误是只断言“返回失败”却不检查旧值，或在 realloc 前发布新容量。游戏映射：动态实体数组、网络缓冲和存档缓冲扩容失败时，旧运行时必须继续可用，不能半更新所有权状态。
 </details>
 
 ### C11-Q2：地址没变，借用就还有效吗
 
+**题型**：生命周期推演与反例
+**作答产物**：分配代次时间线、借用失效点和修复后的契约。
+
 保存 `int *view = buffer.items` 后成功扩容。学习者想写 `if (view == buffer.items) puts(*view)` 来证明无需更新借用。这个方案哪里错误？若只是 reserve(0) 的无操作路径又怎样？
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 成功 realloc 已结束旧对象生命周期，不能读取旧指针值来比较，更不能解引用；数值地址偶然复用不是旧借用存活的证据。结束旧借用，使用 buffer.items 重新取得 view。reserve(0) 在本实现不调用 realloc，原对象没有结束，借用可继续使用。应通过控制流和 API 契约判断，而不是通过 UB 实验推断。游戏资源容器扩容后缓存元素地址的组件，必须重新查找或使用不暴露地址的句柄。
 </details>
 
 ### C11-Q3：第二次分配失败怎样清理
 
+**题型**：所有权图与清理实现
+**作答产物**：所有权图、每条失败路径的释放顺序和可运行清理代码。
+
 需要两块互不共享的数组 A、B；A 成功、B 失败。要求失败时没有泄漏，也不能把半成品发布给调用者。给出获取、提交、清理顺序，并区分“内部资源已释放”与“调用者输出被改坏”。
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 先建立局部空 candidate，申请 A；失败立即返回。再申请 B；失败释放 A 并返回，不写调用者输出。都成功且初始化完成后才转移所有权到输出，局部不再释放已转移块。用确定的第二次失败开关覆盖路径，分别检查输出旧状态和释放次数；仅靠极大 malloc 请求不稳定。关卡资源批量加载同样应避免只发布半张关卡。
 </details>

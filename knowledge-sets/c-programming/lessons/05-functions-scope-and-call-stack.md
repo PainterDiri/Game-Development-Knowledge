@@ -183,34 +183,70 @@ int main(void) {
 
 ## 本章练习
 
-### C05-Q1：为什么修改参数没有生效
+### C05-Q1：按值传递、调用帧与两种可变接口
+
+**题型**：调用栈追踪与短代码实现
+**作答产物**：两层调用帧表；两种完整函数签名/调用；4 个边界结果。
+
+分析：
 
 ```c
-void heal(int health) { health += 5; }
+void heal(int health, int amount) {
+    health += amount;
+}
+
+int main(void) {
+    int player_health = 8;
+    heal(player_health, 5);
+    printf("%d\n", player_health);
+}
 ```
 
-调用 `heal(player_health)` 后原值不变。解释机制并给出两种接口方案。
+1. 画出调用 `heal` 前后 `main.player_health` 与 `heal.health` 的对象/值表并预测输出；
+2. 实现“返回新值”的版本，规则为结果不超过 10，负 amount 失败；
+3. 实现 `bool heal_in_place(int *health, int amount)`，要求空指针或负 amount 时失败且原值不变；
+4. 给出 `(8,5)`、`(10,1)`、`(3,-1)`、空指针四种结果。
 
-<details><summary>最小提示</summary>
+<details><summary>讲解、判定与验证</summary>
 
-参数对象保存的是值的副本。
-</details>
+C 按值传递。调用时 `heal.health` 是值为 8 的独立自动对象，改到 13 后随调用结束消失；`main.player_health` 仍为 8，所以输出 8。
 
-<details><summary>讲解与验证</summary>
+返回值方案可以把失败也纳入接口：
 
-按值传递使 `health` 成为局部副本。可返回新值：`player_health = heal(player_health);`，或以后用 `int *` 明确允许修改调用者。返回值方案所有权清楚；指针方案适合多个结果或原地更新，但要检查空指针与别名。测试调用前后值。游戏映射：纯规则计算优先返回值，运行时状态提交才使用明确可变接口。
+```c
+bool healed_value(int health, int amount, int *out) {
+    if (out == NULL || health < 0 || amount < 0) return false;
+    int result = amount > 10 - health ? 10 : health + amount;
+    *out = result;
+    return true;
+}
+```
+
+原地方案：
+
+```c
+bool heal_in_place(int *health, int amount) {
+    if (health == NULL || *health < 0 || amount < 0) return false;
+    int result = amount > 10 - *health ? 10 : *health + amount;
+    *health = result;
+    return true;
+}
+```
+
+`(8,5)→成功且 10`，`(10,1)→成功且 10`，`(3,-1)→失败且 3 不变`，空指针失败且不解引用。使用 `10-health` 而不是先算 `health+amount`，避免在未经约束的大 amount 上先溢出；更完整契约还应限制 health 上界。
+
+评分点：对象身份与值分开；两种方案都处理失败原子性；调用方对返回值方案写 `int next; if (healed_value(...,&next)) player_health=next;` 后才提交。常见错误是把参数名相同误认为同一对象，或在验证 `amount` 前修改 `*health`。游戏映射：纯伤害/治疗规则适合先计算候选值，运行时状态只在所有检查成功后一次提交。
 </details>
 
 ### C05-Q2：返回局部地址
 
+**题型**：生命周期诊断与反例
+**作答产物**：对象生命周期时间线、失效点和一个看似可用但非法的反例。
+
 `int *make_health(void) { int h=20; return &h; }` 为什么错误？
 
-<details><summary>最小提示</summary>
 
-区分名字离开作用域和对象生命周期结束。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 `h` 具有自动存储期，函数返回时对象生命周期结束，返回地址成为悬空指针，解引用是未定义行为。可直接返回 `int`，让调用者提供输出对象，或在确需长期所有权时动态分配并规定释放者。Sanitizer 可能报告栈生命周期错误，但没报告也不代表合法。游戏映射：跨帧保存临时组件或命令缓冲地址属于同类错误。
 </details>

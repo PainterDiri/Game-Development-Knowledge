@@ -47,7 +47,7 @@ def main() -> int:
                         if path.is_absolute() or ".." in path.parts:
                             raise ValueError(f"unsafe archive member: {name}")
                     archive.extractall(temporary / slug)
-                target = temporary / slug / f"{slug}-code" / "reference/code" / folder
+                target = temporary / slug / f"{slug}-practice" / "reference" / folder
             else:
                 shutil.copytree(source, target, ignore=shutil.ignore_patterns(
                     "__pycache__", "*.pyc", "*.dSYM", "dist", "arena", "arena_asan",

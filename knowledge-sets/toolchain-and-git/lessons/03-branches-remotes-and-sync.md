@@ -204,29 +204,58 @@ git log --oneline --decorate --graph --all
 
 ## 本章练习
 
-### T03-Q1：fetch 与 pull
+### T03-Q1：`fetch`、快进与重放
 
-远端 main 前进，本地 feature 有提交。先做什么？比较 `fetch`、`pull --ff-only` 和 `pull --rebase`。
+**题型**：提交图状态推演
+**作答产物**：三条命令后的提交图、HEAD/远端跟踪分支位置和工作树变化表。
 
-<details><summary>最小提示</summary>
+初始状态为：
 
-先 fetch 看图，不要直接 pull。
-</details>
+```text
+A---B---C  origin/main
+     \
+      D---E  feature/wave (HEAD)
+```
 
-<details><summary>讲解与验证</summary>
+当前分支 `feature/wave` 的上游也是 `origin/feature/wave`，不是 `origin/main`。分别分析下列**互相独立**的操作：
 
-先确认 feature 的上游指向哪里；下面只有明确以 origin/main 为来源时才是在整合远端 main。`git fetch origin` 更新 `origin/main` 和对象，不改工作区；`pull --ff-only` 只有可直接前移才整合；`pull --rebase` 会重放未共享提交、改变提交 ID。用 `git log --graph --all` 验证。force-with-lease 只在团队明确允许重写、没有其他人依赖的个人功能分支使用。游戏映射：构建分支要知道自己基于哪个提交。
+1. `git fetch origin`；
+2. `git pull --ff-only origin main`；
+3. `git pull --rebase origin main`。
+
+对每项写出：是否成功、哪些引用移动、D/E 的提交 ID 是否改变、工作树何时可能冲突。最后给出“只想先观察远端 main，再决定 merge/rebase”的安全命令序列。
+
+<details><summary>讲解、判定与验证</summary>
+
+`git fetch origin` 只下载对象并更新远端跟踪引用；在题图已是最新时图不变，HEAD、`feature/wave` 和工作树不动。`git pull --ff-only origin main` 等价于先 fetch 再尝试把当前 `feature/wave` 快进到 `origin/main`；由于 C 与 E 已分叉，不存在只移动分支指针的快进，所以失败，D/E 不变，正常情况下工作树不被整合。`git pull --rebase origin main` 则先 fetch，再把当前分支上相对 main 的 D/E 重放到 C，成功时得到：
+
+```text
+A---B---C---D'---E'  feature/wave (HEAD)
+```
+
+D/E 的补丁意图保留但提交 ID 改变；重放每个提交时都可能冲突，冲突会暂停并要求 `status → 编辑 → add → rebase --continue`，或 `rebase --abort` 回到开始前。
+
+安全观察序列：
+
+```bash
+git status --short
+git fetch origin
+git log --graph --oneline --decorate --all -20
+git diff origin/main...HEAD
+```
+
+确认工作树干净且分支是否共享后，再显式选择 `git merge origin/main` 或 `git rebase origin/main`。评分点：指出 pull 的来源由显式 `origin main` 决定，而不是当前上游；区分引用移动、提交身份和工作树变化；不能把 `fetch` 说成自动合并。边界：已共享的 feature 通常避免无沟通 rebase；任何后续 push 都先普通推送，只有团队允许改写且完成核对时才考虑 `--force-with-lease`。游戏映射：构建分支与内容分支必须明确基于哪个提交，不能把“已经下载远端状态”误认为“当前构建已包含远端状态”。
 </details>
 
 ### T03-Q2：非快进 push 前如何保护本地工作
 
+**题型**：故障诊断与恢复
+**作答产物**：风险定位、安全命令序列、恢复点与验证输出。
+
 远端 `main` 已前进，你的 `feature/wave` 也有两个本地提交。直接 `git push` 被拒绝。请给出一种保留双方历史的整合方案，并说明为什么不能先强制推送。
 
-<details><summary>最小提示</summary>
-先获取远端信息，再在 feature 分支整合 `origin/main`，最后检查提交图和测试。
-</details>
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 可执行方案是 `git fetch origin`，确认当前在 `feature/wave` 后选择 `git rebase origin/main` 或 `git merge origin/main`；解决冲突并运行测试后，再普通 `git push origin feature/wave`。rebase 会重写本地两个提交的身份，若该分支已经被别人基于它开发，应改用 merge 或先沟通；无论哪种方案，都要用 `git log --graph --oneline --decorate --all` 和 `git diff origin/main...HEAD` 验证变更范围。边界是远端分支保护和协作者共享历史，`git push --force` 可能覆盖别人刚推送的提交；常见错误是把本地 `main` 当成远端最新状态。游戏映射：多人同时改输入、敌人配置或资产索引时，先同步再整合可以把冲突留在可审查的功能分支，而不是直接污染集成分支。
 </details>

@@ -16,6 +16,21 @@
 
 这个项目只验证工具链、Git、确定性、构建证据和故障定位，不承担接入最终游戏的职责。最终交付是一份可在另一台机器复现的命令行小游戏工程，包含固定 seed、测试、构建 manifest、CI 思路和回滚证据。
 
+## 最快开始：下载到仓库外（推荐）
+
+[下载 `toolchain-and-git-code.zip`](../../docs/downloads/toolchain-and-git-code.zip)，解压到个人短路径，例如 `~/game-labs/toolchain/`。打开包根目录 `START_HERE.md`，然后进入：
+
+```bash
+cd toolchain-and-git-practice/workspace/repro-game
+python3 -m unittest discover -s tests -v
+python3 src/build.py --output dist --seed 42
+python3 dist/game.py --seed 42
+```
+
+预期 9 个测试通过，构建器输出 `built dist`，游戏输出包含 `seed=42`、checksum 和 5 个房间。这个目录是可编辑绿色基线；`../../reference/repro-game/` 只用于恢复或比较。后续必须亲自创建 Git 历史、注入回归、修改测试和走完定位/回滚，不能把基线通过当作完成。
+
+如果你在本地直接阅读 Git 仓库而不是网站，亦可运行 `python3 scripts/package_practice.py --course toolchain-and-git --output /tmp/toolchain-and-git-code.zip` 生成同一结构。
+
 ## 环境与代码入口
 
 - Python 3.11+，只用标准库；
@@ -33,11 +48,23 @@
 - 阶段 1：实现并测试固定 seed 的房间生成；
 - 阶段 2：冷构建、生成 manifest、运行产物并用 `git bisect` 定位故意回归。
 
-## Git 隔离
+## 不能跳过的学习者改动
 
-先从仓库根目录执行 `python3 scripts/init_practice.py --course toolchain-and-git`，再执行 `git check-ignore -v .practice/toolchain-and-git` 和 `git status --short --untracked-files=all`。预期命中 `.gitignore` 且主仓库不显示个人文件。不要直接编辑 `knowledge-sets/toolchain-and-git/code/`，不要使用 `git add -f`，不要在仓库根目录运行 `git clean -fdx`。
+下载包提供的是可运行绿色基线，不是已完成作业。至少完成以下改动并保留自己的 Git 历史：
 
-后文的命令均在个人副本 `repro-game` 中执行，不是教材的公开 `code/repro-game`。初始化成功后，从教材仓库根目录进入一次：
+1. **独立改写**：保留公开测试，先把 `generate_room` 的函数体移到临时备份，再根据契约独立实现；不得只改变量名；
+2. **先红后绿**：先加入一个针对固定 seed、出口数量或非法参数的失败测试，确认它在故意缺陷下失败，再修复到通过；
+3. **构建证据**：给 manifest 增加一个稳定字段和一个 provenance 字段，证明前者参与确定性比较、后者允许两次构建不同；
+4. **故障注入**：创建一个单独提交，引入题面指定的 seed 回归，用自动判定器完成 `git bisect`；定位后 revert 或修复，并保留回归测试；
+5. **冷构建**：在两个新临时目录从同一提交构建，不复用 `dist/`，结构化比较 manifest 并启动两个产物。
+
+如果没有“失败过的测试、自己写的修复提交、bisect 结果和两次冷构建证据”，只能证明参考基线能运行，不能证明已经掌握本课程出口能力。
+
+## 仓库内实践的 Git 隔离（备选）
+
+只有已经克隆本课程仓库并希望就近练习时，才从仓库根目录执行 `python3 scripts/init_practice.py --course toolchain-and-git`，再执行 `git check-ignore -v .practice/toolchain-and-git` 和 `git status --short --untracked-files=all`。预期命中 `.gitignore` 且主仓库不显示个人文件。不要直接编辑 `knowledge-sets/toolchain-and-git/code/`，不要使用 `git add -f`，不要在仓库根目录运行 `git clean -fdx`。
+
+使用下载包时，后文命令在 `workspace/repro-game` 执行。使用 `.practice` 备选路径时，命令在个人副本 `repro-game` 中执行，不是教材公开 `code/repro-game`；初始化成功后进入：
 
 ```bash
 cd .practice/toolchain-and-git/repro-game
@@ -50,7 +77,7 @@ git init
 
 ### 任务
 
-1. 进入 `.practice/toolchain-and-git/repro-game/` 个人副本，在这里单独 `git init`，不要给外层教材仓库创建实践分支；
+1. 进入当前可编辑基线：下载包使用 `workspace/repro-game/`，仓库备选使用 `.practice/toolchain-and-git/repro-game/`；在这里单独 `git init`，不要给外层教材仓库创建实践分支；
 2. 运行现有测试，确认基线通过；
 3. 只修改 README 或一条测试说明，使用 `git status`、`git diff`、`git add -p` 和 `git diff --cached` 观察三个状态；
 4. 创建一个单一目的提交，并用 `git show --stat HEAD` 检查；
@@ -166,6 +193,17 @@ git bisect reset
 
 只完成 0+A+B 也可以形成有效的最小交付：测试通过、两次冷构建一致、manifest 可读、产物可启动、产物目录被忽略。不要删除验收项后宣称“已可复现”。C 是把构建工程连接到真实调试工作的关键延伸。
 
+## 验收证据矩阵
+
+| 维度 | 必须保留的学习者证据 | 单独出现时不足以证明 |
+|---|---|---|
+| 基线 | 初次测试、构建和启动的命令与退出码 | 已经会独立实现 |
+| 独立改写 | 删除/重写核心函数后的 diff、先失败后通过的测试 | 参考实现是唯一解 |
+| 故障诊断 | 可复现坏提交、`bisect` 判定器输出、定位提交与修复回归 | 仓库没有其他缺陷 |
+| 可复现构建 | 两个冷目录的 manifest 结构化比较、artifact hash 与启动冒烟 | 所有操作系统字节完全一致 |
+| Git 隔离 | 仓库外工作目录；或 `.practice` 的 `check-ignore` 与主仓库干净状态 | 自动备份或可恢复未提交工作 |
+| 发布思维 | commit、工具版本、测试报告与 artifact 身份的关联 | 已完成真实商店、签名或线上回滚 |
+
 ## 常见失败与诊断速查
 
 <details>
@@ -218,18 +256,19 @@ git bisect reset
 
 专业项目可能使用不同的版本控制、构建服务和资产服务器，但不会消除这些边界；它们只改变实现载体和恢复成本。
 
-## 下载实践代码
+## 下载包角色
 
-本页负责学习：题面、提示、解题路线、验收和失败诊断都直接在网站阅读。你也可以从课程页的“下载实践代码”入口取得整理好的代码包；ZIP 只包含可运行的 `code/repro-game/`、测试和构建入口，不重复打包本页和折叠答案。
+本页保留题面、分阶段操作、验收和失败诊断；ZIP 只交付可运行资产，不复制网页讲解。包根目录结构为：
 
-下载后先进入包内的 `reference/code/repro-game/`，运行：
-
-```bash
-python3 -m unittest discover -s tests -v
-python3 src/game.py --seed 42
+```text
+toolchain-and-git-practice/
+├── START_HERE.md
+├── workspace/repro-game/   # 你的可编辑基线
+├── reference/repro-game/   # 恢复与对照，只读使用
+└── manifest.json
 ```
 
-包内代码是公开参考基线，不代表唯一解法。它不包含 `dist/`、缓存、个人练习状态、日志、密钥或用户绝对路径；实践时只编辑 `.practice/toolchain-and-git/` 或仓库外副本，不要直接修改教材源文件。
+在 `workspace/repro-game/` 完成全部实践；只有需要判断自己是否偏离契约时才查看 `reference/repro-game/`。不要在 reference 中工作，也不要直接修改教材仓库的 `knowledge-sets/toolchain-and-git/code/repro-game/`。下载包不包含 `dist/`、缓存、个人状态、日志、密钥或机器绝对路径。
 
 ## 构建与清理的安全验收
 

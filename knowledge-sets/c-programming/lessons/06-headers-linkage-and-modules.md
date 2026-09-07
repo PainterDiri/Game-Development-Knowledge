@@ -136,30 +136,56 @@ clean:
 
 ### C06-Q1：头文件应该放什么
 
+**题型**：模块边界分类与短代码
+**作答产物**：声明/定义/内部实现分类表和可链接的最小文件布局。
+
 判断“函数原型、普通函数体、结构体定义、`static` 辅助函数”各自是否适合放公共头文件，并说明原因。
 
-<details><summary>最小提示</summary>
 
-问它是声明、可重复定义的类型，还是会在每个包含者中生成实体。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 函数原型和需要共享的结构体定义适合头文件；普通外部函数体放头文件会在多个翻译单元产生重复定义，除非明确使用 `static inline` 等规则；`static` 辅助函数通常留在 `.c`，避免泄漏 API。用两个 `.c` 都包含头文件的最小工程运行链接验证。游戏映射：插件头文件应只暴露稳定 ABI 所需的边界。
 </details>
 
-### C06-Q2：为什么头文件改了却没重编译
+### C06-Q2：从依赖图判断最小重建集合
 
-Makefile 只写 `runtime.o: runtime.c`，而 `runtime.c` 包含 `runtime.h`。修改头文件后仍使用旧对象，如何修复和验证？
+**题型**：Make 依赖图推演与时间戳诊断
+**作答产物**：修改 3 类文件后的重建目标表；修正后的 Make 规则；一次可执行验证。
 
-<details><summary>最小提示</summary>
+项目关系：
 
-把直接包含关系写入依赖图。
+```text
+arena -> main.o runtime.o ui.o
+main.c    includes runtime.h, ui.h
+runtime.c includes runtime.h, config.h
+ui.c      includes ui.h, config.h
+```
+
+当前 Makefile 却只有：
+
+```make
+main.o: main.c
+runtime.o: runtime.c
+ui.o: ui.c
+arena: main.o runtime.o ui.o
+```
+
+分别修改 `runtime.h`、`config.h`、`ui.c` 时，正确的最小重建集合是什么？现有规则会漏掉哪些？写出修正规则，并用 `touch` 与 `make -n` 设计验证；说明为什么最后仍要做一次冷构建。
+
+<details><summary>讲解、判定与验证</summary>
+
+修改 `runtime.h` 应重编 `main.o`、`runtime.o`，再重链接 `arena`；修改 `config.h` 应重编 `runtime.o`、`ui.o`，再重链接；修改 `ui.c` 只需重编 `ui.o` 并重链接。现有规则对两个头文件修改都完全漏重编，`ui.c` 修改则能触发正确链。
+
+直接规则：
+
+```make
+main.o: main.c runtime.h ui.h
+runtime.o: runtime.c runtime.h config.h
+ui.o: ui.c ui.h config.h
+arena: main.o runtime.o ui.o
+```
+
+可执行验证：先 `make clean && make` 建基线，记录对象时间；运行 `touch config.h && make -n`，预期只打印 runtime/ui 的编译命令和最终链接，不应编译 main；再实际 `make` 并检查时间。对 `runtime.h` 重复。大型项目可让编译器生成 `.d` 依赖文件，避免手写漏项。
+
+冷构建 `make clean && make` 只能证明从空产物能建成；增量实验才证明依赖图正确。反过来，增量成功也可能只是旧对象恰好兼容，因此发布前仍需冷构建对照。评分点：三个重建集合正确；规则包含直接 include；区分图正确性与偶然链接成功。常见错误是只让 `arena` 依赖头文件，却不让对应 `.o` 失效。游戏映射：脚本程序集、shader include 和生成代码同样需要显式依赖，否则编辑器里“看似改了”但构建继续使用陈旧中间产物。
 </details>
-
-<details><summary>讲解与验证</summary>
-
-改为 `runtime.o: runtime.c runtime.h`，所有直接包含头文件的目标都列出它。运行 `touch runtime.h && make -n`，预期看到对应 `.o` 重编译；再 `make clean && make all` 做冷构建。常见错误是只给最终可执行文件列所有源文件，导致增量构建无法判断。游戏映射：资源导入和生成代码也需要显式输入依赖，否则编辑器缓存会掩盖错误。
-</details>
-
-下一章利用模块 API 传递数组，开始讨论连续内存、长度和有效区间。

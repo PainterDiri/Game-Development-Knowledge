@@ -4,9 +4,24 @@
 
 实现一个可以用文本命令驱动的小型战斗运行时：显式 seed 生成敌人波次，玩家攻击指定敌人，存活敌人执行反击，程序打印状态和 checksum。验收重点不是美术，而是 C 的状态、边界、生命周期、错误和证据。
 
-## Git 隔离：先复制，绝不直接改教材代码
+## 最快开始：下载到仓库外（推荐）
 
-`knowledge-sets/c-programming/code/runtime-kit/` 是公开、已跟踪的只读参考。直接修改它会出现在主仓库 `git status` 中，未来可能被误提交。请在仓库根目录执行：
+[下载 `c-programming-code.zip`](../../docs/downloads/c-programming-code.zip)，解压到个人短路径，例如 `~/game-labs/c-programming/`。打开包根目录 `START_HERE.md`，然后进入：
+
+```bash
+cd c-programming-practice/workspace/runtime-kit
+make clean all
+make test
+printf 'wave 2\nstatus\nquit\n' | ./arena --seed 42
+```
+
+预期编译无课程启用的警告，C 单元/CLI 集成测试通过，并打印固定 seed 的战斗状态。`workspace/runtime-kit/` 是可编辑绿色基线；`reference/runtime-kit/` 只用于恢复和比较。实践要求你按阶段删除或重写指定函数、先写失败测试、注入越界并用 Sanitizer 修复；原样运行参考实现不算完成。
+
+如果你在本地直接阅读 Git 仓库而不是网站，亦可运行 `python3 scripts/package_practice.py --course c-programming --output /tmp/c-programming-code.zip` 生成同一结构。
+
+## 仓库内实践的 Git 隔离（备选）
+
+`knowledge-sets/c-programming/code/runtime-kit/` 是公开、已跟踪的只读参考。直接修改它会出现在主仓库 `git status` 中，未来可能被误提交。只有已经克隆本课程仓库并希望就近练习时，才在仓库根目录执行：
 
 ```bash
 python3 scripts/init_practice.py --course c-programming
@@ -37,7 +52,20 @@ printf 'wave 2\nstatus\nhit 0 99\nenemy\nstatus\nquit\n' | ./arena --seed 42
 
 ## 先独立做，再查参考
 
-下载包角色是 `reference-code`，不是留空的作业。先运行基线理解入口；随后在个人副本内保留测试，独立重写一个函数，再与参考比较。不要把原样运行参考代码算作已经会实现。本实践的最小版本覆盖固定数组、状态、解析和错误契约；动态内存与文件读写分别由第 11–12 章的 buffer.c、save.c 做章节验证，第 13 章另检验调试器与地址错误；它们不是第二个主实践。固定数组项目不能一并证明这些能力，save.c 也不证明断电持久性。
+下载包同时提供可编辑 `workspace/` 与只读 `reference/`。先运行绿色基线理解入口；随后在可编辑副本内保留测试，独立重写一个函数，再与参考比较。不要把原样运行参考代码算作已经会实现。本实践的最小版本覆盖固定数组、状态、解析和错误契约；动态内存与文件读写分别由第 11–12 章的 buffer.c、save.c 做章节验证，第 13 章另检验调试器与地址错误；它们不是第二个主实践。固定数组项目不能一并证明这些能力，save.c 也不证明断电持久性。
+
+## 不能跳过的学习者改动
+
+至少完成以下产出；每项都要先写或保留能失败的测试，再修改实现：
+
+1. 删除并独立重写 `rg_runtime_spawn_wave` 的核心逻辑，覆盖 `0/1/恰满/超容量` 与失败原子性；
+2. 独立重写 `rg_parse_command` 的一个分支，并新增 `wave 3x`、多余参数或超长物理行的黑盒回归；
+3. 给 `rg_runtime_hit_enemy` 增加一个明确边界测试，证明失败不修改 runtime 和 `out_defeated`；
+4. 故意制造一次 `i <= enemy_count` 越界，保存 Sanitizer 首个非法访问摘要；修复后保留能覆盖最后合法元素的测试；
+5. 用相同 seed 和命令序列生成两份输出，逐字段解释为何相同；再改变一个显式输入，指出预期差异；
+6. 若完成存档拓展，至少注入一次截断/未知版本失败，证明候选对象未提交到真实运行时。
+
+建议在个人副本中单独 `git init`，每个“测试先失败 → 修复 → 回归”形成可检查的小提交。reference 只用于最后对照契约，不用于复制答案。
 
 ## 明确的规则契约
 
@@ -148,14 +176,26 @@ printf 'wave 3\nhit 0 999\nenemy\nstatus\nquit\n' | ./arena --seed 42 > run-b.tx
 diff -u run-a.txt run-b.txt
 ```
 
-上面的命令仍在个人副本中。回到主仓库根目录（从 `.practice/c-programming/runtime-kit` 可用 `cd ../../..`），再运行：
+上面的命令必须在 `workspace/runtime-kit/` 或 `.practice/c-programming/runtime-kit/` 个人副本中执行。若使用网站下载包，个人代码位于仓库外，无需运行 `git check-ignore`；若使用仓库内备选路径，则回到主仓库根目录（从 `.practice/c-programming/runtime-kit` 可用 `cd ../../..`），再运行：
 
 ```bash
 git check-ignore -v .practice/c-programming
 git status --short --untracked-files=all
 ```
 
-通过标准：编译无课程启用的警告；测试和 Sanitizer 通过；相同输入无 diff；非法输入可诊断；错误路径不半更新；主仓库状态不含个人练习。
+通过标准：编译无课程启用的警告；测试和 Sanitizer 通过；相同输入无 diff；非法输入可诊断；错误路径不半更新；下载包用户没有修改教材仓库，仓库内用户的主仓库状态不含个人练习。
+
+## 验收证据矩阵
+
+| 维度 | 必须保留的学习者证据 | 单独出现时不足以证明 |
+|---|---|---|
+| 基线 | `make test`、固定 seed CLI 与退出码 | 已经会独立实现 C 模块 |
+| 独立改写 | 核心函数重写 diff、先失败后通过的边界测试 | 参考实现是唯一正确结构 |
+| 失败原子性 | 调用前快照、错误码、失败后逐字段相等断言 | 所有地址都天然有效 |
+| 内存安全 | 故意缺陷的 Sanitizer 报告、首错定位、修复后的边界回归 | 程序不存在其他 UB 或逻辑错误 |
+| 可复现 | 同 seed/命令序列的逐字段输出与 checksum 对照 | checksum 无碰撞或跨所有平台字节一致 |
+| 实践隔离 | 仓库外工作目录；或 `.practice` 的 ignore/status 证据 | 自动备份、同步或防止本机磁盘损坏 |
+
 
 ## 常见失败
 

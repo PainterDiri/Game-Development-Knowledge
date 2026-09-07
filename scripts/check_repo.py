@@ -55,6 +55,20 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def is_portable_relative_path(value: object, *, single_component: bool = False) -> bool:
+    if not isinstance(value, str) or not value or value != value.strip() or "\\" in value or "\0" in value:
+        return False
+    parts = value.split("/")
+    windows_forbidden = set('<>:"|?*')
+    if single_component and len(parts) != 1:
+        return False
+    return not (
+        any(part in {"", ".", ".."} for part in parts)
+        or any(part.endswith((" ", ".")) for part in parts)
+        or any(any(ord(char) < 32 or char in windows_forbidden for char in part) for part in parts)
+    )
+
+
 def check_course_structure(errors: list[str], slug: str, status: str, base: Path) -> None:
     for rel in SCAFFOLD_FILES:
         if not (base / rel).exists():
@@ -90,17 +104,30 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
                 errors.append(f"{slug}: practice-bundle.json must declare schema 2 and matching slug")
             if bundle.get("downloadType") != "practice-code":
                 errors.append(f"{slug}: practice-bundle.json must declare downloadType practice-code")
+            bundle_name = bundle.get("bundleName", f"{slug}-code")
+            if not is_portable_relative_path(bundle_name, single_component=True):
+                errors.append(f"{slug}: bundleName must be one portable directory name")
             includes = bundle.get("include", [])
             if not includes:
                 errors.append(f"{slug}: practice-bundle.json include must not be empty")
-            allowed_roles = {"code", "starter-code", "reference-code", "test-fixture", "supporting-material", "license"}
+            quick_start = bundle.get("quickStart")
+            if not isinstance(quick_start, list) or not quick_start or not all(isinstance(command, str) and command.strip() for command in quick_start):
+                errors.append(f"{slug}: practice-bundle.json quickStart must be a non-empty string list")
+            roles = {item.get("role") for item in includes if isinstance(item, dict)}
+            if status == "completed" and not roles.intersection({"starter-code", "editable-baseline"}):
+                errors.append(f"{slug}: completed practice bundle needs an editable starter or baseline")
+            if status == "completed" and "reference-code" not in roles:
+                errors.append(f"{slug}: completed practice bundle needs a read-only reference-code entry")
+            allowed_roles = {"code", "starter-code", "editable-baseline", "reference-code", "test-fixture", "supporting-material", "license"}
             for item in includes:
                 if not isinstance(item, dict) or not item.get("path") or not item.get("role"):
                     errors.append(f"{slug}: every bundle include needs path and role")
                 elif item["role"] not in allowed_roles:
                     errors.append(f"{slug}: unsupported bundle role {item['role']!r}")
-                elif ".." in Path(item["path"]).parts or Path(item["path"]).is_absolute():
-                    errors.append(f"{slug}: bundle path escapes course: {item['path']!r}")
+                elif not is_portable_relative_path(item["path"]):
+                    errors.append(f"{slug}: bundle path must be portable and stay inside course: {item['path']!r}")
+                elif item.get("target") is not None and not is_portable_relative_path(item["target"]):
+                    errors.append(f"{slug}: bundle target must be portable and stay inside role directory: {item['target']!r}")
                 elif not (base / item["path"]).exists():
                     errors.append(f"{slug}: bundle input missing: {item['path']}")
         except (json.JSONDecodeError, OSError) as exc:
@@ -132,20 +159,25 @@ def check_course_structure(errors: list[str], slug: str, status: str, base: Path
                 errors.append(f"{slug}: {lesson.name} missing chapter-end exercise section")
             if len(ids) < 1:
                 errors.append(f"{slug}: {lesson.name} needs at least one chapter-end exercise")
-            # A complete explanation is mandatory; a minimal hint is optional and
-            # should not be forced when it would merely repeat the question.
-            if text.count("<details>") < len(ids):
-                errors.append(f"{slug}: {lesson.name} needs one explanation details block for every exercise; hints are optional")
+            if re.search(r"<summary>[^<]*(?:最小提示|提示)[^<]*</summary>", text):
+                errors.append(f"{slug}: {lesson.name} must not contain hint details blocks")
+            if text.count("<details>") != len(ids):
+                errors.append(f"{slug}: {lesson.name} needs exactly one explanation details block for every exercise")
             for match in re.finditer(r"^###\s+((?:[A-Z][A-Z0-9-]*-)?Q\d+|综合题)\s*[：:]", text, re.MULTILINE):
                 block = text[match.end():]
                 next_match = re.search(r"^###\s+", block, re.MULTILINE)
                 if next_match:
                     block = block[:next_match.start()]
+                before_details = block.split("<details>", 1)[0]
+                if not re.search(r"\*\*题型\*\*：\S+", before_details):
+                    errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} missing **题型** metadata")
+                if not re.search(r"\*\*作答产物\*\*：\S+", before_details):
+                    errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} missing **作答产物** metadata")
                 details = re.findall(r"<details>\s*<summary>([^<]*)</summary>(.*?)</details>", block, re.DOTALL)
-                has_answer = any(re.search(r"讲解|解析|答案", summary) and body.strip()
+                has_answer = any(summary.strip() == "讲解、判定与验证" and body.strip()
                                  for summary, body in details)
                 if not has_answer:
-                    errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} is missing a complete explanation details block")
+                    errors.append(f"{slug}: {lesson.name} exercise {match.group(1)} is missing a complete 讲解、判定与验证 block")
             missing_signals = [name for name, tokens in QUALITY_SIGNALS.items() if not any(token in text for token in tokens)]
             if missing_signals:
                 print(f"REVIEW WARNING: {slug}/{lesson.name} missing keyword signals: {', '.join(missing_signals)}; verify actual teaching rather than adding keywords")

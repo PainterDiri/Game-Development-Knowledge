@@ -222,38 +222,55 @@ find . -maxdepth 2 -type f | sort | head -80
 
 ## 本章练习
 
-### T06-Q1：缓存还是源码
+### T06-Q1：源码、缓存、产物还是证据
 
-目录含 `Assets/`、`.meta`、`Library/`、`Build/`、manifest。哪些应提交，如何证明？
+**题型**：构建输入分类与删除实验设计
+**作答产物**：逐项分类表；最小冷构建实验；两项误分类的具体后果。
 
-<details><summary>最小提示</summary>
+Unity 项目候选文件如下：
 
-按源、元数据、依赖、缓存、产物、证据分类。
-</details>
+```text
+Assets/Player.prefab
+Assets/Player.prefab.meta
+Packages/manifest.json
+ProjectSettings/ProjectVersion.txt
+Library/ArtifactDB
+Temp/UnityLockfile
+Build/Windows/Game.exe
+artifacts/build-manifest.json
+UserSettings/EditorUserSettings.asset
+```
 
-<details><summary>讲解与验证</summary>
+对每项填写：`权威源码/锁定输入`、`机器缓存/临时状态`、`可发布产物`、`构建证据` 或 `个人设置`；再写是否进入源码 Git、是否进入发布归档。最后设计一次“不拿现有工作副本冒险”的冷 checkout 验证，证明被忽略目录确实可重建。
 
-Assets 和维持 GUID 的 `.meta` 通常是输入；Library 是可再生缓存；Build 是产物；manifest 是构建证据，随 artifact 保存。删除缓存后冷导入并构建，若仍能恢复才支持忽略。常见错误是把所有自动生成文件都忽略。游戏映射：错误忽略 `.meta` 会断资产引用。
+<details><summary>讲解、判定与验证</summary>
+
+典型分类：`Assets/Player.prefab` 与其 `.meta`、`Packages/manifest.json`、`ProjectSettings/ProjectVersion.txt` 是权威输入，应提交源码 Git；`.meta` 维持 GUID，不能因自动生成就忽略。`Library/ArtifactDB` 是机器可重建缓存，`Temp/UnityLockfile` 是临时状态，通常不提交也不发布。`Build/Windows/Game.exe` 是发布产物，通常由构建系统保存而非提交源码 Git。`artifacts/build-manifest.json` 是构建证据，应与对应 artifact 一起归档；是否提交源码仓库取决于项目策略，但不能伪装成构建输入。`UserSettings/EditorUserSettings.asset` 是个人编辑器状态，通常不共享。
+
+安全实验：从指定 commit 新建临时 clone/worktree，核对锁定依赖和引擎版本，确保没有复制 `Library/Temp/Build`，执行批处理导入、测试与构建；记录退出码、日志、artifact hash 和 manifest。原工作副本不做 `rm -rf` 实验。评分点：每项同时判断状态所有者、可重建性与交付位置；实验从干净输入重建而不是只删除一个文件后看编辑器能否打开。误忽略 `.meta` 会造成资源 GUID 与引用变化；误提交 `Library` 会带来巨大噪声、跨机器冲突和陈旧导入结果。边界：某些平台 SDK 或大资产需通过锁定的包管理/LFS/资产系统取得，它们仍必须是可解析的显式输入。游戏映射：源码、导入缓存、玩家二进制和可追溯 manifest 属于不同生命周期，混在一起会让复现、评审与回滚同时失效。
 </details>
 
 ### T06-Q2：`.gitignore` 为什么救不了已跟踪的缓存
 
+**题型**：故障诊断与最小修复
+**作答产物**：首个因果缺陷、最小修复，以及能防止复发的验证。
+
 `Library/` 已经被写进 `.gitignore`，但仓库仍然显示 `Library/Import.db` 被修改。要求：在不删除本地文件的前提下停止跟踪它，并说明如何确认不会误删可恢复输入。
 
-<details><summary>最小提示</summary>
-忽略规则只影响未跟踪路径；先确认它确实是可再生缓存，再从索引移除而不是从磁盘删除。
-</details>
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 先用 `git check-ignore -v Library/Import.db` 确认规则，再用 `git ls-files Library/Import.db` 确认它已被跟踪；确认冷导入能恢复后，执行 `git rm --cached -r Library`（只移除索引，保留工作区），提交这次边界修复。用 `git status --short --ignored` 验证缓存变为 ignored，用干净 checkout 或临时目录冷导入验证它可再生。边界是插件二进制、资产 `.meta` 或锁文件可能不是缓存，不能按目录名盲目移除；常见错误是 `git clean -fdx`，它会删除个人实践和未备份缓存。游戏映射：提交 Unity `Library/` 或 UE 派生缓存会让仓库膨胀并掩盖真正的项目输入，但错误忽略 `.meta` 又会断资产引用。
 </details>
 
 ### T06-Q3：构建产物如何反查来源
 
+**题型**：数据建模与来源追踪
+**作答产物**：最小 manifest 字段表、反查步骤和一个无法证明的边界。
+
 请为一个跨平台游戏构建设计最小 manifest 字段，使拿到发布包的人能回答“它来自哪个提交、用什么工具、包含哪版内容、经过哪些测试”。
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 至少记录 commit、分支/标签或版本号、平台与架构、引擎/编译器/SDK 版本、依赖锁定摘要、内容版本、构建时间（作为 provenance 而非确定性输入）、artifact hash、测试摘要和构建 run ID。验证是在冷构建后生成 manifest，重新计算包 hash 并从包反查提交和测试记录；边界是不要把绝对路径、秘密或不可复现的机器状态当作核心身份。常见错误是只记录“latest”或把缓存 key 当发布身份。游戏映射：崩溃报告、玩家存档兼容和热修复都需要从线上包找到源代码与内容定义。
 </details>

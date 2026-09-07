@@ -125,39 +125,69 @@ int main(void) {
 
 ## 本章练习
 
-### C09-Q1：设计只读输入 API
+### C09-Q1：设计只读数组 API 并实现求和
 
-为计算数组总和设计函数签名，使它不能修改输入，并说明长度和空数组契约。
+**题型**：API 契约与短代码实现
+**作答产物**：函数声明、8–15 行实现、5 个测试和别名/溢出说明。
 
-<details><summary>最小提示</summary>
+设计 `sum_damage`：读取 `int` 数组但不得修改；成功时把总和写到 `int64_t *out_sum`。契约要求：
 
-使用 `const` 指针加 `size_t`，先决定空区间返回什么。
-</details>
+- `count==0` 时允许 `values==NULL`，结果为 0；
+- `count>0` 时 `values` 必须非空；
+- `out_sum` 必须非空；
+- 任何失败都不得改 `*out_sum`；
+- 输入元素允许负数。
 
-<details><summary>讲解与验证</summary>
+写出声明与实现，并说明 `const int *` 保证了什么、没有保证什么。若 `out_sum` 的地址与输入数组存储重叠，接口应允许还是禁止？
 
-可用 `long long sum(const int *values, size_t count)`，若允许空区间则返回 0；若 count>0 而 values 为 NULL 应拒绝，但返回值类型要能表达错误，实际可用 `bool sum(..., long long *out)`。验证编译器拒绝通过该指针写入，并测试 0、1、负值元素及溢出策略。游戏映射：查询组件和统计帧数据通常只读借用。
+<details><summary>讲解、判定与验证</summary>
+
+一种实现：
+
+```c
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+bool sum_damage(const int *values, size_t count, int64_t *out_sum) {
+    if (out_sum == NULL || (count > 0 && values == NULL)) return false;
+    int64_t candidate = 0;
+    for (size_t i = 0; i < count; ++i) {
+        candidate += values[i];
+    }
+    *out_sum = candidate;
+    return true;
+}
+```
+
+在常见 `int` 不宽于 32 位且 `size_t` 可非常大时，理论上 `int64_t` 累加仍可能溢出；严谨 API 要限制最大 count/输入范围，或每次加法前检查 `INT64_MIN/MAX`。`const int *` 表示函数不能通过该指针修改元素，但不保证底层对象永不被其他别名、线程或硬件修改，也不保证指针有效。
+
+建议契约禁止 `out_sum` 与输入存储重叠：类型和对齐本就不同，重叠会使最后写回可能覆盖输入对象并引入严格别名/有效类型问题。实现先算候选、成功末尾再写，因此正常不重叠场景满足失败原子性。
+
+测试：`NULL,0→成功且0`；空 out→失败；`NULL,1→失败且旧 out 不变`；`{4,-2,9}→11`；单个 `INT_MAX` 得到对应 64 位值；若实现溢出检查再测上下界。评分点：空数组契约精确；`const` 边界正确；失败不写输出；说明总和范围。游戏映射：只读伤害快照、排行榜批量统计和服务器校验 API 都应把数组长度、可变性、输出提交时机与数值范围写进接口。
 </details>
 
 ### C09-Q2：指针为何失效
 
+**题型**：生命周期图与故障诊断
+**作答产物**：拥有者—借用者图、失效事件、最小修复和回归测试。
+
 函数返回局部数组首地址，调用者随后读取它。指出生命周期错误，并比较返回值、调用者缓冲区和动态分配三种修复。
 
-<details><summary>最小提示</summary>
 
-修复不是“换一个指针类型”，而是改变对象拥有者和生命周期。
-</details>
-
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 局部数组在函数返回时结束生命周期，地址悬空。小结果可按值返回；可变长度结果由调用者传入缓冲区并同时传容量；确需跨调用保存才动态分配，并明确谁 `free`。调用者缓冲区最可控但可能报告容量不足，动态分配灵活却增加失败和泄漏路径。Sanitizer 与边界测试验证。游戏映射：跨帧缓存和资源加载结果必须有明确所有者。
 </details>
 
 ### C09-Q3：输出参数失败时如何保持原状态
 
+**题型**：短代码与失败原子性
+**作答产物**：代码补丁、失败前后字段表和调用者可观察结果。
+
 设计函数 `bool parse_health(const char *text, int *out_health)`：输入非法时，调用者原有的生命值必须保持不变。请说明写入顺序和 `out_health == NULL` 的处理。
 
-<details><summary>讲解与验证</summary>
+<details><summary>讲解、判定与验证</summary>
 
 函数应先检查 `text` 与 `out_health` 是否满足契约，把解析结果写入局部临时变量，只有完整验证通过后才执行 `*out_health = candidate` 并返回 `true`；非法输入直接返回 `false`，不触碰调用者对象。边界包括空字符串、溢出、前后空白、负值策略和 `NULL` 指针；若 `text == NULL` 也要在契约中明确拒绝。常见错误是边读边写输出，导致失败后留下半更新状态。验证先把 `health` 设为 100，输入非法后断言仍是 100，再测试合法边界。游戏映射：配置加载、存档解析和网络消息处理都应采用失败原子性，避免半解析数据污染运行时状态。
 </details>

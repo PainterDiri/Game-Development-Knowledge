@@ -74,7 +74,14 @@ def copy_public_tree(source: Path, destination: Path) -> None:
             continue
         dst = destination / src.relative_to(source)
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        if src.suffix.lower() == ".md":
+            text = src.read_text(encoding="utf-8")
+            # Course sources link to repository-local generated downloads through docs/;
+            # the public mirror is already rooted inside docs/, so remove that segment.
+            text = text.replace("../../docs/downloads/", "../../downloads/")
+            dst.write_text(text, encoding="utf-8")
+        else:
+            shutil.copy2(src, dst)
 
 
 def course_landing(course: dict) -> str:
@@ -148,7 +155,8 @@ def downloads_landing(courses: list[dict], bundled: set[str]) -> str:
         "- 下载包由课程目录中的 `practice-bundle.json` 显式白名单生成，不会自动收集未审查文件；",
         "- 包内不含 `Library/`、`DerivedDataCache/`、`dist/`、个人 `.practice/`、日志、密钥或用户绝对路径；",
         "- `completed` 课程才会显示正式下载入口；尚未完成的课程不会发布空包或伪造代码；",
-        "- 参考代码不是唯一答案；请先完成网站题面，再用下载内容运行、对照或复制。",
+        "- 下载后先打开根目录 `START_HERE.md`，从 `workspace/` 或 `starter/` 开始；`reference/` 只作对照；",
+        "- 默认解压到仓库外的个人短路径；`.practice/` 只是在已克隆本仓库时的备选。",
         "",
         "## 当前可下载内容",
         "",
@@ -182,7 +190,7 @@ def append_bundle_link(destination: Path, course: dict, bundled: set[str]) -> No
     text += (
         f"\n\n{marker}\n\n"
         "## 下载实践代码\n\n"
-        "学习内容仍在本页及课程实践页中；下载包只包含经过白名单审核的可运行代码、测试和配置。请复制到 `.practice/` 或仓库外再修改。"
+        "学习内容仍在本页及课程实践页中；下载包只包含经过白名单审核的可运行代码、测试和配置。默认解压到仓库外，从 `workspace/` 或 `starter/` 开始；`.practice/` 只是已克隆仓库时的备选。"
         f"\n\n[下载 `{course['slug']}-code.zip`](../../downloads/{course['slug']}-code.zip) · "
         "[查看全部实践代码下载](../../downloads/README.md)"
         "\n"
